@@ -10,6 +10,8 @@
 export type Intent =
   | 'double'
   | 'isEven'
+  | 'clear'
+  | 'resources'
   | 'greet'
   | 'goodbye'
   | 'thanks'
@@ -21,6 +23,8 @@ export type Intent =
 export const INTENTS: Intent[] = [
   'double',
   'isEven',
+  'clear',
+  'resources',
   'greet',
   'goodbye',
   'thanks',
@@ -86,6 +90,32 @@ export const LANGUAGE_TRAINING_DATA: LanguageExample[] = [
   { text: 'what is 19 even or odd', intent: 'isEven' },
   { text: 'is 64 an even number', intent: 'isEven' },
   { text: 'determine if 77 is odd', intent: 'isEven' },
+
+  // clear
+  { text: 'clear', intent: 'clear' },
+  { text: 'clear screen', intent: 'clear' },
+  { text: 'clear terminal', intent: 'clear' },
+  { text: 'clean screen', intent: 'clear' },
+  { text: 'clean terminal', intent: 'clear' },
+  { text: 'cls', intent: 'clear' },
+  { text: 'wipe the screen', intent: 'clear' },
+  { text: 'reset screen', intent: 'clear' },
+  { text: 'empty the screen', intent: 'clear' },
+  { text: 'please clear', intent: 'clear' },
+
+  // resources
+  { text: 'show memory usage', intent: 'resources' },
+  { text: 'memory usage', intent: 'resources' },
+  { text: 'how much memory are you using', intent: 'resources' },
+  { text: 'resource usage', intent: 'resources' },
+  { text: 'show resources', intent: 'resources' },
+  { text: 'cpu usage', intent: 'resources' },
+  { text: 'show stats', intent: 'resources' },
+  { text: 'system stats', intent: 'resources' },
+  { text: 'process memory', intent: 'resources' },
+  { text: 'neo memory', intent: 'resources' },
+  { text: 'your memory usage', intent: 'resources' },
+  { text: 'how much cpu do you use', intent: 'resources' },
 
   // help
   { text: 'help', intent: 'help' },

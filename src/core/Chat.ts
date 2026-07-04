@@ -1,7 +1,7 @@
 /**
  * Orchestrates a single conversation turn: understands free text with the
  * `language` skill, then either replies with small talk (`chitchat`) or
- * runs an action skill Neo already knows (`double`, `isEven`).
+ * runs an action skill Neo already knows.
  *
  * `Chat` is not itself a skill Neo learns — it is the conductor that
  * decides *when* to use the skills Neo knows. `Neo` stays generic and has
@@ -13,10 +13,13 @@ import { useLanguage } from '../skills/language/language';
 import type { Intent } from '../skills/language/languageTestdata';
 import type { ChitchatTopic } from '../skills/chitchat/chitchatTestdata';
 
-/** Intents that trigger a numeric skill instead of a chitchat reply. */
-const ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
+/** Intents that need a number extracted from the user's text. */
+const NUMERIC_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
 
-function describeResult(intent: 'double' | 'isEven', result: unknown): string {
+/** Intents that run a skill immediately with no arguments. */
+const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources']);
+
+function describeNumericResult(intent: 'double' | 'isEven', result: unknown): string {
   if (intent === 'double') {
     return `The double of that number is ${result}.`;
   }
@@ -35,18 +38,22 @@ export class Chat {
     return (await this.neo.use('chitchat', topic)) as string;
   }
 
-  /** Understands `text` and returns Neo's reply. */
+  /** Understands `text` and returns Neo's reply (empty string after a screen clear). */
   async handle(text: string): Promise<string> {
     const { intent, arg } = await useLanguage(text);
 
-    if (!ACTION_INTENTS.has(intent)) {
-      return this.reply(intent as ChitchatTopic);
+    if (IMMEDIATE_ACTION_INTENTS.has(intent)) {
+      if (!this.neo.knows(intent)) return this.reply('skillNotLearned');
+      return (await this.neo.use(intent)) as string;
     }
 
-    if (arg === null) return this.reply('missingArg');
-    if (!this.neo.knows(intent)) return this.reply('skillNotLearned');
+    if (NUMERIC_ACTION_INTENTS.has(intent)) {
+      if (arg === null) return this.reply('missingArg');
+      if (!this.neo.knows(intent)) return this.reply('skillNotLearned');
+      const result = await this.neo.use(intent, arg);
+      return describeNumericResult(intent as 'double' | 'isEven', result);
+    }
 
-    const result = await this.neo.use(intent, arg);
-    return describeResult(intent as 'double' | 'isEven', result);
+    return this.reply(intent as ChitchatTopic);
   }
 }

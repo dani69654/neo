@@ -1,5 +1,5 @@
 /** Normalized admin verbs after synonym resolution. */
-export type AdminVerb = 'help' | 'exit' | 'train' | 'use' | 'knows';
+export type AdminVerb = 'help' | 'exit' | 'train' | 'use' | 'knows' | 'clear' | 'stats';
 
 const VERB_SYNONYMS: Record<string, AdminVerb> = {
   help: 'help',
@@ -17,6 +17,15 @@ const VERB_SYNONYMS: Record<string, AdminVerb> = {
   knows: 'knows',
   know: 'knows',
   has: 'knows',
+  clear: 'clear',
+  cls: 'clear',
+  clean: 'clear',
+  reset: 'clear',
+  stats: 'stats',
+  resources: 'stats',
+  memory: 'stats',
+  usage: 'stats',
+  top: 'stats',
 };
 
 /** Maps lowercase aliases to canonical skill names. */
@@ -30,6 +39,10 @@ const SKILL_SYNONYMS: Record<string, string> = {
   nlu: 'language',
   chitchat: 'chitchat',
   chat: 'chitchat',
+  clear: 'clear',
+  screen: 'clear',
+  resources: 'resources',
+  stats: 'resources',
 };
 
 export interface ParsedAdminCommand {

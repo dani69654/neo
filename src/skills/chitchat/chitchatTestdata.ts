@@ -37,7 +37,7 @@ export const CHITCHAT_RESPONSES: Record<ChitchatTopic, string[]> = {
     'Yes, I am an AI — I learn skills one at a time, like in The Matrix.',
   ],
   help: [
-    'I know how to double a number and check if a number is even or odd. Try "double 21" or "is 7 even".',
+    'I know how to double a number, check if it is even or odd, clear the screen, and show my resource usage. Try "double 21", "clear screen", or "show memory usage".',
   ],
   unknown: [
     "I didn't understand that.",

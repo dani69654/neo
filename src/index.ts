@@ -2,10 +2,13 @@ import * as readline from 'readline';
 import { Neo, type Skill } from './core/Neo';
 import { Chat } from './core/Chat';
 import { isAdminCommand, parseAdminCommand } from './core/adminCommands';
+import { registerBasicSkills } from './core/basicSkills';
 import { trainDouble, useDouble } from './skills/double/double';
 import { trainIsEven, useIsEven } from './skills/isEven/isEven';
 import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 import { trainLanguage } from './skills/language/language';
+import { useClear } from './skills/clear/clear';
+import { useResources } from './skills/resources/resources';
 import { useChitchat } from './skills/chitchat/chitchat';
 
 const neo = new Neo();
@@ -15,6 +18,8 @@ function printHelp(): void {
   console.log(`
 Admin commands (train, learn, and teach are interchangeable; same for use/run, knows/has):
   help                     show this message
+  clear / cls / clean      clear the terminal (also: "clear screen" in chat)
+  stats / memory / usage   show Neo process resource usage
   train double             train the double skill
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -22,11 +27,13 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
   train language           train the language skill (intent parsing)
   learn lang               same as train language
-  learn chitchat           learn the chitchat skill (no training needed)
+  learn chitchat           learn the chitchat skill (already loaded by default)
   train chat               same as learn chitchat
   knows <name>             check if Neo knows a skill
   has <name>               same as knows <name>
   exit                     quit
+
+Basic skills (clear, resources, chitchat) are loaded automatically at startup.
 
 Anything else is treated as a free-form message to Neo, e.g.:
   hi
@@ -43,6 +50,22 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
 
     case 'exit':
       return false;
+
+    case 'clear':
+      if (neo.knows('clear')) {
+        neo.use('clear');
+      } else {
+        console.log('Skill "clear" not available.');
+      }
+      break;
+
+    case 'stats':
+      if (neo.knows('resources')) {
+        console.log(neo.use('resources'));
+      } else {
+        console.log('Skill "resources" not available.');
+      }
+      break;
 
     case 'train':
       if (rest[0] === 'double') {
@@ -67,9 +90,15 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'chitchat') {
         neo.learn('chitchat', useChitchat as Skill);
         console.log('Skill "chitchat" learned.');
+      } else if (rest[0] === 'clear') {
+        neo.learn('clear', useClear as Skill);
+        console.log('Skill "clear" learned.');
+      } else if (rest[0] === 'resources') {
+        neo.learn('resources', useResources as Skill);
+        console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train double | train isEven [bits] | train language | learn chitchat',
+          'Unknown skill. Try: train double | train isEven [bits] | train language | learn chitchat | learn clear | learn resources',
         );
       }
       break;
@@ -126,7 +155,8 @@ async function handleLine(line: string): Promise<boolean> {
   }
 
   try {
-    console.log(await chat.handle(trimmed));
+    const reply = await chat.handle(trimmed);
+    if (reply) console.log(reply);
   } catch (err) {
     console.log(err instanceof Error ? err.message : 'Something went wrong.');
   }
@@ -138,6 +168,8 @@ async function prompt(rl: readline.Interface): Promise<string> {
 }
 
 async function main(): Promise<void> {
+  registerBasicSkills(neo);
+
   const rl = readline.createInterface({
     input: process.stdin as unknown as NodeJS.ReadableStream,
     output: process.stdout,
