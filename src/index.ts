@@ -1,17 +1,21 @@
 import * as readline from 'readline';
 import { Neo, type Skill } from './core/Neo';
 import { trainDouble, useDouble } from './skills/double/double';
+import { trainIsEven, useIsEven } from './skills/isEven/isEven';
+import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 
 const neo = new Neo();
 
 function printHelp(): void {
   console.log(`
 Commands:
-  help              show this message
-  train double      train the double skill
-  use double <n>    run the double skill on a number
-  knows <name>      check if Neo knows a skill
-  exit              quit
+  help                     show this message
+  train double             train the double skill
+  use double <n>           run the double skill on a number
+  train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
+  use isEven <n>           run the isEven skill on a number
+  knows <name>             check if Neo knows a skill
+  exit                     quit
 
 A natural-language chat can be added here later.
 `);
@@ -36,8 +40,18 @@ async function handleCommand(line: string): Promise<boolean> {
         await trainDouble();
         neo.learn('double', useDouble as Skill);
         console.log('Skill "double" learned.');
+      } else if (rest[0] === 'isEven') {
+        const bits = rest[1] !== undefined ? Number(rest[1]) : DEFAULT_BITS;
+        if (!Number.isInteger(bits) || bits < 1) {
+          console.log('Please enter a valid number of bits (e.g. 8).');
+          break;
+        }
+        console.log(`Training isEven with ${bits} bits (range 0–${2 ** bits - 1})...`);
+        await trainIsEven(bits);
+        neo.learn('isEven', useIsEven as Skill);
+        console.log('Skill "isEven" learned.');
       } else {
-        console.log('Unknown skill. Try: train double');
+        console.log('Unknown skill. Try: train double | train isEven [bits]');
       }
       break;
 
@@ -50,8 +64,24 @@ async function handleCommand(line: string): Promise<boolean> {
         }
         const result = await neo.use('double', n);
         console.log(result);
+      } else if (rest[0] === 'isEven' && rest[1] !== undefined) {
+        const n = Number(rest[1]);
+        if (Number.isNaN(n)) {
+          console.log('Please enter a valid number.');
+          break;
+        }
+        try {
+          const { isEven, confidence } = (await neo.use('isEven', n)) as {
+            isEven: boolean;
+            confidence: number;
+          };
+          const label = isEven ? 'even' : 'odd';
+          console.log(`${label} (confidence: ${(confidence * 100).toFixed(1)}%)`);
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Prediction failed.');
+        }
       } else {
-        console.log('Usage: use double <number>');
+        console.log('Usage: use double <number> | use isEven <number>');
       }
       break;
 
