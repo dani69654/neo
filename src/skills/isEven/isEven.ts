@@ -51,7 +51,7 @@ export const trainIsEven = async (bits: number = DEFAULT_BITS): Promise<void> =>
   // A larger batch size keeps training fast even when there are tens of
   // thousands of rows (exhaustive training up to MAX_EXHAUSTIVE_BITS).
   const batchSize = Math.min(inputs.length, 512);
-  await model.fit(xs, ys, { epochs: EPOCHS_TRAIN_IS_EVEN, batchSize });
+  await model.fit(xs, ys, { epochs: EPOCHS_TRAIN_IS_EVEN, batchSize, verbose: 0 });
 
   xs.dispose();
   ys.dispose();

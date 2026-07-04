@@ -3,10 +3,13 @@ import { Neo, type Skill } from './core/Neo';
 import { Chat } from './core/Chat';
 import { isAdminCommand, parseAdminCommand } from './core/adminCommands';
 import { registerBasicSkills } from './core/basicSkills';
-import { trainDouble, useDouble } from './skills/double/double';
-import { trainIsEven, useIsEven } from './skills/isEven/isEven';
-import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
+import {
+  ensureSkill,
+  trainAndLearnDouble,
+  trainAndLearnIsEven,
+} from './core/skillBootstrap';
 import { trainLanguage } from './skills/language/language';
+import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 import { useClear } from './skills/clear/clear';
 import { useResources } from './skills/resources/resources';
 import { useChitchat } from './skills/chitchat/chitchat';
@@ -14,13 +17,17 @@ import { useChitchat } from './skills/chitchat/chitchat';
 const neo = new Neo();
 const chat = new Chat(neo);
 
+const BINARY_MATH_SKILLS = new Set(['add', 'subtract', 'multiply', 'divide']);
+
 function printHelp(): void {
   console.log(`
 Admin commands (train, learn, and teach are interchangeable; same for use/run, knows/has):
   help                     show this message
   clear / cls / clean      clear the terminal (also: "clear screen" in chat)
   stats / memory / usage   show Neo process resource usage
-  train double             train the double skill
+  use add 5 3              add two numbers (also: subtract, multiply, divide)
+  run sum 10 7             same as use add 10 7
+  train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
   run isEven <n>           same as use isEven <n>
@@ -33,12 +40,13 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   has <name>               same as knows <name>
   exit                     quit
 
-Basic skills (clear, resources, chitchat) are loaded automatically at startup.
+Basic skills (add, subtract, multiply, divide, clear, resources, chitchat) load at startup.
 
 Anything else is treated as a free-form message to Neo, e.g.:
   hi
+  add 5 and 3
+  divide 20 by 4
   double 21
-  is 49 even
 `);
 }
 
@@ -69,9 +77,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
 
     case 'train':
       if (rest[0] === 'double') {
-        console.log('Training double...');
-        await trainDouble();
-        neo.learn('double', useDouble as Skill);
+        await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
       } else if (rest[0] === 'isEven') {
         const bits = rest[1] !== undefined ? Number(rest[1]) : DEFAULT_BITS;
@@ -79,9 +85,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
           console.log('Please enter a valid number of bits (e.g. 8).');
           break;
         }
-        console.log(`Training isEven with ${bits} bits (range 0–${2 ** bits - 1})...`);
-        await trainIsEven(bits);
-        neo.learn('isEven', useIsEven as Skill);
+        await trainAndLearnIsEven(neo, bits);
         console.log('Skill "isEven" learned.');
       } else if (rest[0] === 'language') {
         console.log('Training language...');
@@ -104,14 +108,36 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       break;
 
     case 'use':
-      if (rest[0] === 'double' && rest[1] !== undefined) {
+      if (
+        rest[0] &&
+        BINARY_MATH_SKILLS.has(rest[0]) &&
+        rest[1] !== undefined &&
+        rest[2] !== undefined
+      ) {
+        const a = Number(rest[1]);
+        const b = Number(rest[2]);
+        if (Number.isNaN(a) || Number.isNaN(b)) {
+          console.log('Please enter valid numbers.');
+          break;
+        }
+        try {
+          await ensureSkill(neo, rest[0]);
+          console.log(await neo.use(rest[0], a, b));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Calculation failed.');
+        }
+      } else if (rest[0] === 'double' && rest[1] !== undefined) {
         const n = Number(rest[1]);
         if (Number.isNaN(n)) {
           console.log('Please enter a valid number.');
           break;
         }
-        const result = await neo.use('double', n);
-        console.log(result);
+        try {
+          await ensureSkill(neo, 'double');
+          console.log(await neo.use('double', n));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Prediction failed.');
+        }
       } else if (rest[0] === 'isEven' && rest[1] !== undefined) {
         const n = Number(rest[1]);
         if (Number.isNaN(n)) {
@@ -119,6 +145,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
           break;
         }
         try {
+          await ensureSkill(neo, 'isEven');
           const { isEven, confidence } = (await neo.use('isEven', n)) as {
             isEven: boolean;
             confidence: number;
@@ -129,7 +156,9 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
           console.log(err instanceof Error ? err.message : 'Prediction failed.');
         }
       } else {
-        console.log('Usage: use double <number> | use isEven <number>');
+        console.log(
+          'Usage: use add <a> <b> | use subtract <a> <b> | use multiply <a> <b> | use divide <a> <b> | use double <n> | use isEven <n>',
+        );
       }
       break;
 

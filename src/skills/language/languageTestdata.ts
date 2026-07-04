@@ -10,6 +10,10 @@
 export type Intent =
   | 'double'
   | 'isEven'
+  | 'add'
+  | 'subtract'
+  | 'multiply'
+  | 'divide'
   | 'clear'
   | 'resources'
   | 'greet'
@@ -23,6 +27,10 @@ export type Intent =
 export const INTENTS: Intent[] = [
   'double',
   'isEven',
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
   'clear',
   'resources',
   'greet',
@@ -90,6 +98,58 @@ export const LANGUAGE_TRAINING_DATA: LanguageExample[] = [
   { text: 'what is 19 even or odd', intent: 'isEven' },
   { text: 'is 64 an even number', intent: 'isEven' },
   { text: 'determine if 77 is odd', intent: 'isEven' },
+
+  // add
+  { text: 'add 5 and 3', intent: 'add' },
+  { text: '5 plus 3', intent: 'add' },
+  { text: 'what is 5 plus 3', intent: 'add' },
+  { text: 'sum of 10 and 7', intent: 'add' },
+  { text: 'add 12 8', intent: 'add' },
+  { text: 'please add 4 and 9', intent: 'add' },
+  { text: 'what is 15 plus 6', intent: 'add' },
+  { text: 'calculate 20 plus 30', intent: 'add' },
+  { text: 'add together 6 and 11', intent: 'add' },
+  { text: '100 plus 25', intent: 'add' },
+  { text: 'can u add numbers', intent: 'add' },
+  { text: 'can you add numbers', intent: 'add' },
+
+  // subtract
+  { text: '10 minus 3', intent: 'subtract' },
+  { text: 'what is 10 minus 3', intent: 'subtract' },
+  { text: 'subtract 10 3', intent: 'subtract' },
+  { text: '20 minus 7', intent: 'subtract' },
+  { text: '15 minus 4', intent: 'subtract' },
+  { text: 'difference of 50 and 8', intent: 'subtract' },
+  { text: '20 minus 6', intent: 'subtract' },
+  { text: '100 minus 25', intent: 'subtract' },
+  { text: 'what is 9 minus 4', intent: 'subtract' },
+  { text: '50 minus 12', intent: 'subtract' },
+  { text: 'can u subtract numbers', intent: 'subtract' },
+  { text: 'can you subtract numbers', intent: 'subtract' },
+
+  // multiply
+  { text: 'multiply 6 by 7', intent: 'multiply' },
+  { text: '6 times 7', intent: 'multiply' },
+  { text: 'what is 6 times 7', intent: 'multiply' },
+  { text: 'product of 5 and 8', intent: 'multiply' },
+  { text: 'multiply 12 4', intent: 'multiply' },
+  { text: '9 times 9', intent: 'multiply' },
+  { text: 'please multiply 3 by 11', intent: 'multiply' },
+  { text: 'what is 15 times 2', intent: 'multiply' },
+  { text: 'calculate 8 times 6', intent: 'multiply' },
+  { text: '100 times 3', intent: 'multiply' },
+
+  // divide
+  { text: 'divide 20 by 4', intent: 'divide' },
+  { text: '20 divided by 4', intent: 'divide' },
+  { text: 'what is 20 divided by 4', intent: 'divide' },
+  { text: 'divide 100 5', intent: 'divide' },
+  { text: '50 over 10', intent: 'divide' },
+  { text: 'please divide 36 by 6', intent: 'divide' },
+  { text: 'what is 81 divided by 9', intent: 'divide' },
+  { text: 'quotient of 48 and 8', intent: 'divide' },
+  { text: '12 divided by 3', intent: 'divide' },
+  { text: '100 over 4', intent: 'divide' },
 
   // clear
   { text: 'clear', intent: 'clear' },
@@ -231,8 +291,14 @@ export function intentToVector(intent: Intent): number[] {
   return INTENTS.map((candidate) => (candidate === intent ? 1 : 0));
 }
 
+/** Extracts all numbers found in the text, in order (e.g. "add 5 and 3" -> [5, 3]). */
+export function extractNumbers(text: string): number[] {
+  const matches = text.match(/-?\d+(\.\d+)?/g);
+  return matches ? matches.map(Number) : [];
+}
+
 /** Extracts the first number found in the text, if any (e.g. "double 21" -> 21). */
 export function extractFirstNumber(text: string): number | null {
-  const match = text.match(/-?\d+(\.\d+)?/);
-  return match ? Number(match[0]) : null;
+  const numbers = extractNumbers(text);
+  return numbers.length > 0 ? numbers[0] : null;
 }

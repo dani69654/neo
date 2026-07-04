@@ -43,6 +43,17 @@ const SKILL_SYNONYMS: Record<string, string> = {
   screen: 'clear',
   resources: 'resources',
   stats: 'resources',
+  add: 'add',
+  sum: 'add',
+  plus: 'add',
+  subtract: 'subtract',
+  sub: 'subtract',
+  minus: 'subtract',
+  multiply: 'multiply',
+  mul: 'multiply',
+  times: 'multiply',
+  divide: 'divide',
+  div: 'divide',
 };
 
 export interface ParsedAdminCommand {

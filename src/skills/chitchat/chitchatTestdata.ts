@@ -37,7 +37,7 @@ export const CHITCHAT_RESPONSES: Record<ChitchatTopic, string[]> = {
     'Yes, I am an AI — I learn skills one at a time, like in The Matrix.',
   ],
   help: [
-    'I know how to double a number, check if it is even or odd, clear the screen, and show my resource usage. Try "double 21", "clear screen", or "show memory usage".',
+    'I can add, subtract, multiply, and divide numbers, double a value, check even/odd, clear the screen, and show resource usage. Try "add 5 and 3" or "divide 20 by 4".',
   ],
   unknown: [
     "I didn't understand that.",
@@ -45,7 +45,7 @@ export const CHITCHAT_RESPONSES: Record<ChitchatTopic, string[]> = {
     'Can you rephrase that?',
   ],
   missingArg: [
-    "Sure, but I need a number to work with — try something like 'double 21'.",
+    "Sure, but I need the numbers — try 'double 21', 'add 5 and 3', or 'divide 20 by 4'.",
   ],
   skillNotLearned: [
     "I understand what you want, but I haven't learned that skill yet.",

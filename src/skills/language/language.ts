@@ -10,15 +10,23 @@ import {
   INTENTS,
   LANGUAGE_TRAINING_DATA,
   buildVocabulary,
-  extractFirstNumber,
+  extractNumbers,
   intentToVector,
   textToVector,
 } from './languageTestdata';
+import { evaluateChainExpression, parseMathExpression } from './mathParser';
 
 const EPOCHS_TRAIN_LANGUAGE = 300;
 
-/** Intents that take a number as argument, extracted separately from raw text. */
-const INTENTS_WITH_ARG: ReadonlySet<Intent> = new Set(['double', 'isEven']);
+/** Intents that need numbers extracted from the user's text. */
+const INTENTS_WITH_NUMBERS: ReadonlySet<Intent> = new Set([
+  'double',
+  'isEven',
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
+]);
 
 let model: tf.Sequential | null = null;
 
@@ -28,10 +36,12 @@ let vocabulary: string[] = [];
 
 export interface ParsedCommand {
   intent: Intent;
-  /** Numeric argument found in the text, if any (e.g. "double 21" -> 21). */
-  arg: number | null;
+  /** Numbers found in the text, in order. */
+  numbers: number[];
   /** Model confidence in the predicted intent, from 0 to 1. */
   confidence: number;
+  /** Set when the input is a multi-step inline expression such as "1 + 4 - 3". */
+  chainEval?: { display: string; result: number };
 }
 
 /**
@@ -62,12 +72,25 @@ export const trainLanguage = async (): Promise<void> => {
   ys.dispose();
 };
 
+export function isLanguageTrained(): boolean {
+  return model !== null;
+}
+
 /**
- * Parses `text` into an intent (with confidence) and an optional numeric
- * argument, e.g. "double 21" -> { intent: 'double', arg: 21, confidence }.
+ * Parses `text` into an intent (with confidence) and any numbers found in it.
  */
 export const useLanguage = async (text: string): Promise<ParsedCommand> => {
   if (!model) throw new Error('Skill language not trained yet. Run "train language" first.');
+
+  const chain = evaluateChainExpression(text);
+  if (chain) {
+    return { intent: 'add', numbers: [], confidence: 1, chainEval: chain };
+  }
+
+  const math = parseMathExpression(text);
+  if (math) {
+    return { intent: math.intent, numbers: [...math.numbers], confidence: 1 };
+  }
 
   const vector = textToVector(text, vocabulary);
   const input = tf.tensor2d([vector]);
@@ -84,7 +107,7 @@ export const useLanguage = async (text: string): Promise<ParsedCommand> => {
 
   const intent = INTENTS[bestIndex];
   const confidence = probabilities[bestIndex];
-  const arg = INTENTS_WITH_ARG.has(intent) ? extractFirstNumber(text) : null;
+  const numbers = INTENTS_WITH_NUMBERS.has(intent) ? extractNumbers(text) : [];
 
-  return { intent, arg, confidence };
+  return { intent, numbers, confidence };
 };
