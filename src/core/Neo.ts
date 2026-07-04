@@ -14,7 +14,6 @@ export class Neo {
   }
 
   knows(name: string): boolean {
-    // TODO: verificare se la skill è registrata
-    throw new Error('TODO: implementare knows');
+    return this.skills.has(name);
   }
 }
