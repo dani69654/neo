@@ -16,7 +16,7 @@ export const trainDouble = async (): Promise<void> => {
   await model.fit(
     tf.tensor1d(DOUBLE_TEST_DATA.inputs),
     tf.tensor1d(DOUBLE_TEST_DATA.outputs),
-    { epochs: EPOCHS_TRAIN_DOUBLE },
+    { epochs: EPOCHS_TRAIN_DOUBLE, verbose: 0 },
   );
 };
 

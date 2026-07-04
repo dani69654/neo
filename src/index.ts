@@ -1,31 +1,39 @@
 import * as readline from 'readline';
 import { Neo, type Skill } from './core/Neo';
+import { Chat } from './core/Chat';
 import { trainDouble, useDouble } from './skills/double/double';
 import { trainIsEven, useIsEven } from './skills/isEven/isEven';
 import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
-import { trainLanguage, useLanguage } from './skills/language/language';
+import { trainLanguage } from './skills/language/language';
+import { useChitchat } from './skills/chitchat/chitchat';
 
 const neo = new Neo();
+const chat = new Chat(neo);
+
+/** First word of admin commands, as opposed to free-form chat text. */
+const ADMIN_COMMANDS = new Set(['help', 'exit', 'quit', 'train', 'use', 'learn', 'knows']);
 
 function printHelp(): void {
   console.log(`
-Commands:
+Admin commands:
   help                     show this message
   train double             train the double skill
   use double <n>           run the double skill on a number
   train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
   use isEven <n>           run the isEven skill on a number
   train language           train the language skill (intent parsing)
-  say <free text>          parse free text and run the matching skill
+  learn chitchat           learn the chitchat skill (no training needed)
   knows <name>             check if Neo knows a skill
   exit                     quit
+
+Anything else is treated as a free-form message to Neo, e.g.:
+  hi
+  double 21
+  is 49 even
 `);
 }
 
-async function handleCommand(line: string): Promise<boolean> {
-  const [command, ...rest] = line.trim().split(/\s+/);
-  if (!command) return true;
-
+async function handleAdminCommand(command: string, rest: string[]): Promise<boolean> {
   switch (command) {
     case 'help':
       printHelp();
@@ -60,6 +68,15 @@ async function handleCommand(line: string): Promise<boolean> {
       }
       break;
 
+    case 'learn':
+      if (rest[0] === 'chitchat') {
+        neo.learn('chitchat', useChitchat as Skill);
+        console.log('Skill "chitchat" learned.');
+      } else {
+        console.log('Unknown skill. Try: learn chitchat');
+      }
+      break;
+
     case 'use':
       if (rest[0] === 'double' && rest[1] !== undefined) {
         const n = Number(rest[1]);
@@ -90,31 +107,6 @@ async function handleCommand(line: string): Promise<boolean> {
       }
       break;
 
-    case 'say': {
-      const text = rest.join(' ');
-      if (!text) {
-        console.log('Usage: say <free text>, e.g. say double 21');
-        break;
-      }
-      try {
-        const { intent, arg, confidence } = await useLanguage(text);
-        console.log(`Intent: ${intent} (confidence: ${(confidence * 100).toFixed(1)}%)`);
-
-        if (intent === 'double' || intent === 'isEven') {
-          if (arg === null) {
-            console.log(`I understood "${intent}", but couldn't find a number in your sentence.`);
-          } else if (!neo.knows(intent)) {
-            console.log(`Skill "${intent}" isn't learned yet. Run "train ${intent}" first.`);
-          } else {
-            console.log(await neo.use(intent, arg));
-          }
-        }
-      } catch (err) {
-        console.log(err instanceof Error ? err.message : 'Language skill failed.');
-      }
-      break;
-    }
-
     case 'knows':
       if (rest[0]) {
         console.log(neo.knows(rest[0]) ? 'yes' : 'no');
@@ -122,11 +114,26 @@ async function handleCommand(line: string): Promise<boolean> {
         console.log('Usage: knows <name>');
       }
       break;
-
-    default:
-      console.log(`Unknown command: "${command}". Type "help".`);
   }
 
+  return true;
+}
+
+async function handleLine(line: string): Promise<boolean> {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+
+  const [command, ...rest] = trimmed.split(/\s+/);
+
+  if (ADMIN_COMMANDS.has(command)) {
+    return handleAdminCommand(command, rest);
+  }
+
+  try {
+    console.log(await chat.handle(trimmed));
+  } catch (err) {
+    console.log(err instanceof Error ? err.message : 'Something went wrong.');
+  }
   return true;
 }
 
@@ -140,12 +147,12 @@ async function main(): Promise<void> {
     output: process.stdout,
   });
 
-  console.log('Neo — type "help" for commands, "exit" to quit.');
+  console.log('Neo — type "help" for admin commands, or just talk to me. Type "exit" to quit.');
 
   let running = true;
   while (running) {
     const line = await prompt(rl);
-    running = await handleCommand(line);
+    running = await handleLine(line);
   }
 
   rl.close();
