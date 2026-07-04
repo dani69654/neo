@@ -4,13 +4,13 @@ export class Neo {
   private skills = new Map<string, Skill>();
 
   learn(name: string, skill: Skill): void {
-    // TODO: registrare la skill
-    throw new Error('TODO: implementare learn');
+    this.skills.set(name, skill);
   }
 
   use(name: string, ...args: unknown[]): unknown {
-    // TODO: recuperare la skill e invocarla con args
-    throw new Error('TODO: implementare use');
+    const skill = this.skills.get(name);
+    if (!skill) throw new Error(`Skill ${name} not found`);
+    return skill(...args);
   }
 
   knows(name: string): boolean {

@@ -4,7 +4,7 @@
  * @returns The doubled number.
  */
 
-import { DOUBLE_TEST_DATA } from './doubleTestdata';
+import { DOUBLE_TEST_DATA, EPOCHS_TRAIN_DOUBLE } from './doubleTestdata';
 import * as tf from '@tensorflow/tfjs-node';
 
 let model: tf.Sequential | null = null;
@@ -16,7 +16,7 @@ export const trainDouble = async (): Promise<void> => {
   await model.fit(
     tf.tensor1d(DOUBLE_TEST_DATA.inputs),
     tf.tensor1d(DOUBLE_TEST_DATA.outputs),
-    { epochs: 10000 },
+    { epochs: EPOCHS_TRAIN_DOUBLE },
   );
 };
 
