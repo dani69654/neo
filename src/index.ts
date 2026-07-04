@@ -1,6 +1,7 @@
 import * as readline from 'readline';
 import { Neo, type Skill } from './core/Neo';
 import { Chat } from './core/Chat';
+import { isAdminCommand, parseAdminCommand } from './core/adminCommands';
 import { trainDouble, useDouble } from './skills/double/double';
 import { trainIsEven, useIsEven } from './skills/isEven/isEven';
 import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
@@ -10,20 +11,21 @@ import { useChitchat } from './skills/chitchat/chitchat';
 const neo = new Neo();
 const chat = new Chat(neo);
 
-/** First word of admin commands, as opposed to free-form chat text. */
-const ADMIN_COMMANDS = new Set(['help', 'exit', 'quit', 'train', 'use', 'learn', 'knows']);
-
 function printHelp(): void {
   console.log(`
-Admin commands:
+Admin commands (train, learn, and teach are interchangeable; same for use/run, knows/has):
   help                     show this message
   train double             train the double skill
+  learn double             same as train double
   use double <n>           run the double skill on a number
+  run isEven <n>           same as use isEven <n>
   train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
-  use isEven <n>           run the isEven skill on a number
   train language           train the language skill (intent parsing)
+  learn lang               same as train language
   learn chitchat           learn the chitchat skill (no training needed)
+  train chat               same as learn chitchat
   knows <name>             check if Neo knows a skill
+  has <name>               same as knows <name>
   exit                     quit
 
 Anything else is treated as a free-form message to Neo, e.g.:
@@ -33,14 +35,13 @@ Anything else is treated as a free-form message to Neo, e.g.:
 `);
 }
 
-async function handleAdminCommand(command: string, rest: string[]): Promise<boolean> {
-  switch (command) {
+async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean> {
+  switch (verb) {
     case 'help':
       printHelp();
       break;
 
     case 'exit':
-    case 'quit':
       return false;
 
     case 'train':
@@ -63,17 +64,13 @@ async function handleAdminCommand(command: string, rest: string[]): Promise<bool
         console.log('Training language...');
         await trainLanguage();
         console.log('Skill "language" learned.');
-      } else {
-        console.log('Unknown skill. Try: train double | train isEven [bits] | train language');
-      }
-      break;
-
-    case 'learn':
-      if (rest[0] === 'chitchat') {
+      } else if (rest[0] === 'chitchat') {
         neo.learn('chitchat', useChitchat as Skill);
         console.log('Skill "chitchat" learned.');
       } else {
-        console.log('Unknown skill. Try: learn chitchat');
+        console.log(
+          'Unknown skill. Try: train double | train isEven [bits] | train language | learn chitchat',
+        );
       }
       break;
 
@@ -123,10 +120,9 @@ async function handleLine(line: string): Promise<boolean> {
   const trimmed = line.trim();
   if (!trimmed) return true;
 
-  const [command, ...rest] = trimmed.split(/\s+/);
-
-  if (ADMIN_COMMANDS.has(command)) {
-    return handleAdminCommand(command, rest);
+  if (isAdminCommand(trimmed)) {
+    const parsed = parseAdminCommand(trimmed);
+    if (parsed) return handleAdminCommand(parsed.verb, parsed.args);
   }
 
   try {
