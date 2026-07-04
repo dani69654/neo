@@ -3,6 +3,7 @@ import { Neo, type Skill } from './core/Neo';
 import { trainDouble, useDouble } from './skills/double/double';
 import { trainIsEven, useIsEven } from './skills/isEven/isEven';
 import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
+import { trainLanguage, useLanguage } from './skills/language/language';
 
 const neo = new Neo();
 
@@ -14,10 +15,10 @@ Commands:
   use double <n>           run the double skill on a number
   train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
   use isEven <n>           run the isEven skill on a number
+  train language           train the language skill (intent parsing)
+  say <free text>          parse free text and run the matching skill
   knows <name>             check if Neo knows a skill
   exit                     quit
-
-A natural-language chat can be added here later.
 `);
 }
 
@@ -50,8 +51,12 @@ async function handleCommand(line: string): Promise<boolean> {
         await trainIsEven(bits);
         neo.learn('isEven', useIsEven as Skill);
         console.log('Skill "isEven" learned.');
+      } else if (rest[0] === 'language') {
+        console.log('Training language...');
+        await trainLanguage();
+        console.log('Skill "language" learned.');
       } else {
-        console.log('Unknown skill. Try: train double | train isEven [bits]');
+        console.log('Unknown skill. Try: train double | train isEven [bits] | train language');
       }
       break;
 
@@ -84,6 +89,31 @@ async function handleCommand(line: string): Promise<boolean> {
         console.log('Usage: use double <number> | use isEven <number>');
       }
       break;
+
+    case 'say': {
+      const text = rest.join(' ');
+      if (!text) {
+        console.log('Usage: say <free text>, e.g. say double 21');
+        break;
+      }
+      try {
+        const { intent, arg, confidence } = await useLanguage(text);
+        console.log(`Intent: ${intent} (confidence: ${(confidence * 100).toFixed(1)}%)`);
+
+        if (intent === 'double' || intent === 'isEven') {
+          if (arg === null) {
+            console.log(`I understood "${intent}", but couldn't find a number in your sentence.`);
+          } else if (!neo.knows(intent)) {
+            console.log(`Skill "${intent}" isn't learned yet. Run "train ${intent}" first.`);
+          } else {
+            console.log(await neo.use(intent, arg));
+          }
+        }
+      } catch (err) {
+        console.log(err instanceof Error ? err.message : 'Language skill failed.');
+      }
+      break;
+    }
 
     case 'knows':
       if (rest[0]) {

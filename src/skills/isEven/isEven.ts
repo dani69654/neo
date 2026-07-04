@@ -58,7 +58,7 @@ export const trainIsEven = async (bits: number = DEFAULT_BITS): Promise<void> =>
 };
 
 export const useIsEven = async (x: number): Promise<IsEvenResult> => {
-  if (!model) throw new Error('Skill isEven not trained');
+  if (!model) throw new Error('Skill isEven not trained yet. Run "train isEven" first.');
 
   const maxValue = maxValueForBits(trainedBits);
   if (!Number.isInteger(x) || x < 0 || x >= maxValue) {

@@ -21,7 +21,7 @@ export const trainDouble = async (): Promise<void> => {
 };
 
 export const useDouble = async (x: number): Promise<number> => {
-  if (!model) throw new Error('Skill double not trained');
+  if (!model) throw new Error('Skill double not trained yet. Run "train double" first.');
   const result = model.predict(tf.tensor2d([x], [1, 1])) as tf.Tensor;
   const value = result.dataSync()[0];
   result.dispose();
