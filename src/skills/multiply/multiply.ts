@@ -4,6 +4,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadLayersModel, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 import {
   EPOCHS_TRAIN_MULTIPLY,
@@ -40,6 +41,19 @@ export const trainMultiply = async (): Promise<void> => {
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadMultiplyModel(): Promise<boolean> {
+  if (model) return true;
+  const loaded = await loadLayersModel('multiply');
+  if (!loaded) return false;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveMultiplyModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('multiply', model);
+}
 
 export const useMultiply = async (a: number, b: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill multiply not trained yet. Run "train multiply" first.');

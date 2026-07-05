@@ -4,6 +4,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadLayersModel, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 import { ADD_MAX_OPERAND, EPOCHS_TRAIN_ADD, generateAddTrainingData } from './addTestdata';
 
@@ -41,6 +42,19 @@ export const trainAdd = async (): Promise<void> => {
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadAddModel(): Promise<boolean> {
+  if (model) return true;
+  const loaded = await loadLayersModel('add');
+  if (!loaded) return false;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveAddModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('add', model);
+}
 
 export const useAdd = async (a: number, b: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill add not trained yet. Run "train add" first.');

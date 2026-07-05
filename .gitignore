@@ -1,3 +1,5 @@
 /node_modules
 /dist
 .cursor
+/data/models/
+/data/neo-state.json

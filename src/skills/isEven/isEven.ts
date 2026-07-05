@@ -5,6 +5,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadJson, loadLayersModel, saveJson, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 import {
   DEFAULT_BITS,
@@ -55,6 +56,22 @@ export const trainIsEven = async (bits: number = DEFAULT_BITS): Promise<void> =>
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadIsEvenModel(): Promise<boolean> {
+  if (model) return true;
+  const meta = loadJson<{ bits: number }>('isEven', 'meta.json');
+  const loaded = await loadLayersModel('isEven');
+  if (!meta || !loaded) return false;
+  trainedBits = meta.bits;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveIsEvenModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('isEven', model);
+  saveJson('isEven', 'meta.json', { bits: trainedBits });
+}
 
 export const useIsEven = async (x: number): Promise<SkillResult<IsEvenValue>> => {
   if (!model) throw new Error('Skill isEven not trained yet. Run "train isEven" first.');

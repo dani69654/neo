@@ -4,6 +4,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadLayersModel, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 import {
   DIVIDE_MAX_OPERAND,
@@ -36,6 +37,19 @@ export const trainDivide = async (): Promise<void> => {
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadDivideModel(): Promise<boolean> {
+  if (model) return true;
+  const loaded = await loadLayersModel('divide');
+  if (!loaded) return false;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveDivideModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('divide', model);
+}
 
 export const useDivide = async (a: number, b: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill divide not trained yet. Run "train divide" first.');

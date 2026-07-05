@@ -6,6 +6,7 @@
 
 import { DOUBLE_TEST_DATA, EPOCHS_TRAIN_DOUBLE } from './doubleTestdata';
 import * as tf from '@tensorflow/tfjs-node';
+import { loadLayersModel, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 
 let model: tf.Sequential | null = null;
@@ -20,6 +21,19 @@ export const trainDouble = async (): Promise<void> => {
     { epochs: EPOCHS_TRAIN_DOUBLE, verbose: 0 },
   );
 };
+
+export async function loadDoubleModel(): Promise<boolean> {
+  if (model) return true;
+  const loaded = await loadLayersModel('double');
+  if (!loaded) return false;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveDoubleModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('double', model);
+}
 
 export const useDouble = async (x: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill double not trained yet. Run "train double" first.');

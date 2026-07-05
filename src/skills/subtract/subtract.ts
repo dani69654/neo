@@ -4,6 +4,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadLayersModel, saveLayersModel } from '../../core/modelStore';
 import { skillResult, type SkillResult } from '../../core/skillResult';
 import {
   EPOCHS_TRAIN_SUBTRACT,
@@ -38,6 +39,19 @@ export const trainSubtract = async (): Promise<void> => {
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadSubtractModel(): Promise<boolean> {
+  if (model) return true;
+  const loaded = await loadLayersModel('subtract');
+  if (!loaded) return false;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveSubtractModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('subtract', model);
+}
 
 export const useSubtract = async (a: number, b: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill subtract not trained yet. Run "train subtract" first.');

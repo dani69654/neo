@@ -5,6 +5,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { loadJson, loadLayersModel, saveJson, saveLayersModel } from '../../core/modelStore';
 import {
   type Intent,
   INTENTS,
@@ -71,6 +72,22 @@ export const trainLanguage = async (): Promise<void> => {
   xs.dispose();
   ys.dispose();
 };
+
+export async function loadLanguageModel(): Promise<boolean> {
+  if (model) return true;
+  const savedVocabulary = loadJson<string[]>('language', 'vocabulary.json');
+  const loaded = await loadLayersModel('language');
+  if (!savedVocabulary || !loaded) return false;
+  vocabulary = savedVocabulary;
+  model = loaded as tf.Sequential;
+  return true;
+}
+
+export async function saveLanguageModel(): Promise<void> {
+  if (!model) return;
+  await saveLayersModel('language', model);
+  saveJson('language', 'vocabulary.json', vocabulary);
+}
 
 export function isLanguageTrained(): boolean {
   return model !== null;

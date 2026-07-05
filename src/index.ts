@@ -5,14 +5,15 @@ import { isAdminCommand, parseAdminCommand } from './core/adminCommands';
 import { registerBasicSkills } from './core/basicSkills';
 import {
   ensureSkill,
+  loadPersistedSkills,
   trainAndLearnAdd,
   trainAndLearnSubtract,
   trainAndLearnMultiply,
   trainAndLearnDivide,
   trainAndLearnDouble,
   trainAndLearnIsEven,
+  trainAndLearnLanguage,
 } from './core/skillBootstrap';
-import { trainLanguage } from './skills/language/language';
 import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 import { useClear } from './skills/clear/clear';
 import { useResources } from './skills/resources/resources';
@@ -48,6 +49,9 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   knows <name>             check if Neo knows a skill
   has <name>               same as knows <name>
   exit                     quit
+
+Trained skills are saved under data/models/ and restored on startup.
+Run "npm run train-all" to train everything once and persist to disk.
 
 Basic skills (clear, resources, chitchat) load at startup.
 Math skills (add, subtract, multiply, divide) are ML — auto-trained on first use in chat.
@@ -110,8 +114,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         await trainAndLearnIsEven(neo, bits);
         console.log('Skill "isEven" learned.');
       } else if (rest[0] === 'language') {
-        console.log('Training language...');
-        await trainLanguage();
+        await trainAndLearnLanguage();
         console.log('Skill "language" learned.');
       } else if (rest[0] === 'chitchat') {
         neo.learn('chitchat', useChitchat as Skill);
@@ -215,6 +218,11 @@ async function prompt(rl: readline.Interface): Promise<string> {
 
 async function main(): Promise<void> {
   registerBasicSkills(neo);
+
+  const restored = await loadPersistedSkills(neo);
+  if (restored.length > 0) {
+    console.log(`Restored from disk: ${restored.join(', ')}`);
+  }
 
   const rl = readline.createInterface({
     input: process.stdin as unknown as NodeJS.ReadableStream,
