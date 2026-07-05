@@ -13,6 +13,7 @@
   "author": "Daniele Martinelli",
   "license": "ISC",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.22.0"
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15"
   }
 }

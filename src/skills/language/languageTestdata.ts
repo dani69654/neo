@@ -17,6 +17,7 @@ export type Intent =
   | 'mod'
   | 'clear'
   | 'resources'
+  | 'recognizeFace'
   | 'greet'
   | 'goodbye'
   | 'thanks'
@@ -35,6 +36,7 @@ export const INTENTS: Intent[] = [
   'mod',
   'clear',
   'resources',
+  'recognizeFace',
   'greet',
   'goodbye',
   'thanks',
@@ -169,6 +171,15 @@ export const LANGUAGE_TRAINING_DATA: LanguageExample[] = [
   { text: 'can you tell me the result of 10 mod 3', intent: 'mod' },
   { text: 'can you tell me the result of 10%3', intent: 'mod' },
   { text: 'result of 17%5', intent: 'mod' },
+
+  // recognizeFace
+  { text: 'who is in photo.png', intent: 'recognizeFace' },
+  { text: 'who is /Users/me/photo.jpg', intent: 'recognizeFace' },
+  { text: 'recognize face in test.jpg', intent: 'recognizeFace' },
+  { text: 'identify face in faces/sample.png', intent: 'recognizeFace' },
+  { text: 'who is in data/faces/person_01/01.png', intent: 'recognizeFace' },
+  { text: 'identify data/faces/person_03/05.png', intent: 'recognizeFace' },
+  { text: 'recognize data/faces/person_10/02.png', intent: 'recognizeFace' },
 
   // clear
   { text: 'clear', intent: 'clear' },

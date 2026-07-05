@@ -14,6 +14,7 @@ import {
   persistLanguageSkill,
   persistModSkill,
   persistMultiplySkill,
+  persistRecognizeFaceSkill,
   persistSubtractSkill,
 } from './skillPersistence';
 import { loadAddModel, trainAdd, useAdd } from '../skills/add/add';
@@ -21,6 +22,11 @@ import { loadSubtractModel, trainSubtract, useSubtract } from '../skills/subtrac
 import { loadMultiplyModel, trainMultiply, useMultiply } from '../skills/multiply/multiply';
 import { loadDivideModel, trainDivide, useDivide } from '../skills/divide/divide';
 import { loadModModel, trainMod, useMod } from '../skills/mod/mod';
+import {
+  loadRecognizeFaceModel,
+  trainRecognizeFace,
+  useRecognizeFace,
+} from '../skills/recognizeFace/recognizeFace';
 import { loadDoubleModel, trainDouble, useDouble } from '../skills/double/double';
 import { loadIsEvenModel, trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -125,6 +131,19 @@ export async function trainAndLearnMod(neo: Neo): Promise<void> {
   });
 }
 
+export async function trainAndLearnRecognizeFace(neo: Neo): Promise<void> {
+  await runOnce('recognizeFace', async () => {
+    if (getSkillState('recognizeFace') && (await loadRecognizeFaceModel())) {
+      neo.learn('recognizeFace', useRecognizeFace as Skill);
+      return;
+    }
+    console.log('Training recognizeFace...');
+    await trainRecognizeFace();
+    neo.learn('recognizeFace', useRecognizeFace as Skill);
+    await persistRecognizeFaceSkill();
+  });
+}
+
 export async function trainAndLearnDouble(neo: Neo): Promise<void> {
   await runOnce('double', async () => {
     if (getSkillState('double') && (await loadDoubleModel())) {
@@ -178,6 +197,11 @@ export async function ensureSkill(neo: Neo, name: string): Promise<void> {
 
   if (name === 'mod') {
     if (!neo.knows('mod')) await trainAndLearnMod(neo);
+    return;
+  }
+
+  if (name === 'recognizeFace') {
+    if (!neo.knows('recognizeFace')) await trainAndLearnRecognizeFace(neo);
     return;
   }
 

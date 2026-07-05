@@ -10,6 +10,12 @@ import { loadSubtractModel, saveSubtractModel, trainSubtract, useSubtract } from
 import { loadMultiplyModel, saveMultiplyModel, trainMultiply, useMultiply } from '../skills/multiply/multiply';
 import { loadDivideModel, saveDivideModel, trainDivide, useDivide } from '../skills/divide/divide';
 import { loadModModel, saveModModel, trainMod, useMod } from '../skills/mod/mod';
+import {
+  loadRecognizeFaceModel,
+  saveRecognizeFaceModel,
+  trainRecognizeFace,
+  useRecognizeFace,
+} from '../skills/recognizeFace/recognizeFace';
 import { loadDoubleModel, saveDoubleModel, trainDouble, useDouble } from '../skills/double/double';
 import { loadIsEvenModel, saveIsEvenModel, trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -48,6 +54,11 @@ export async function persistDivideSkill(): Promise<void> {
 export async function persistModSkill(): Promise<void> {
   await saveModModel();
   markSkillTrained('mod');
+}
+
+export async function persistRecognizeFaceSkill(): Promise<void> {
+  await saveRecognizeFaceModel();
+  markSkillTrained('recognizeFace');
 }
 
 export async function persistDoubleSkill(): Promise<void> {
@@ -92,6 +103,11 @@ export async function loadPersistedSkills(neo: Neo): Promise<string[]> {
   if (getSkillState('mod') && (await loadModModel())) {
     neo.learn('mod', useMod as Skill);
     restored.push('mod');
+  }
+
+  if (getSkillState('recognizeFace') && (await loadRecognizeFaceModel())) {
+    neo.learn('recognizeFace', useRecognizeFace as Skill);
+    restored.push('recognizeFace');
   }
 
   if (getSkillState('double') && (await loadDoubleModel())) {
@@ -140,6 +156,11 @@ export async function trainAllPersistedSkills(neo: Neo, isEvenBits: number = DEF
   await trainMod();
   neo.learn('mod', useMod as Skill);
   await persistModSkill();
+
+  console.log('Training recognizeFace...');
+  await trainRecognizeFace();
+  neo.learn('recognizeFace', useRecognizeFace as Skill);
+  await persistRecognizeFaceSkill();
 
   console.log('Training double...');
   await trainDouble();

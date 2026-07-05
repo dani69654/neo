@@ -7,6 +7,8 @@ export const MODELS_DIR = path.join(DATA_DIR, 'models');
 
 export const NEO_STATE_FILE = path.join(DATA_DIR, 'neo-state.json');
 
+export const FACES_DIR = path.join(DATA_DIR, 'faces');
+
 export function modelDir(skillName: string): string {
   return path.join(MODELS_DIR, skillName);
 }

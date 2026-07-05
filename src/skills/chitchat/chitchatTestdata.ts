@@ -37,7 +37,7 @@ export const CHITCHAT_RESPONSES: Record<ChitchatTopic, string[]> = {
     'Yes, I am an AI — I learn skills one at a time, like in The Matrix.',
   ],
   help: [
-    'I can add, subtract, multiply, divide, and mod numbers, double a value, check even/odd, clear the screen, and show resource usage. Try "add 5 and 3", "divide 20 by 4", or "20 mod 3".',
+    'I can add, subtract, multiply, divide, and mod numbers, recognize faces, double a value, check even/odd, clear the screen, and show resource usage. Try "20 mod 3" or "who is in data/faces/person_01/01.png".',
   ],
   unknown: [
     "I didn't understand that.",

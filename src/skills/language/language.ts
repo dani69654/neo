@@ -16,6 +16,11 @@ import {
   textToVector,
 } from './languageTestdata';
 import { parseChainExpression, parseMathExpression } from './mathParser';
+import {
+  detectRecognizeFace,
+  extractImagePath,
+  requireImageFile,
+} from '../recognizeFace/recognizeFaceParser';
 
 const EPOCHS_TRAIN_LANGUAGE = 300;
 
@@ -44,6 +49,8 @@ export interface ParsedCommand {
   confidence: number;
   /** Set when the input is a multi-step inline expression such as "2*9/3". */
   chainEval?: { display: string };
+  /** Image path for the recognizeFace skill. */
+  imagePath?: string;
 }
 
 /**
@@ -108,6 +115,12 @@ export const useLanguage = async (text: string): Promise<ParsedCommand> => {
   const chain = parseChainExpression(text);
   if (chain) {
     return { intent: 'add', numbers: [], confidence: 1, chainEval: { display: chain.display } };
+  }
+
+  if (detectRecognizeFace(text)) {
+    const imagePath = extractImagePath(text);
+    if (imagePath) requireImageFile(imagePath);
+    return { intent: 'recognizeFace', numbers: [], confidence: 1, imagePath: imagePath ?? undefined };
   }
 
   const vector = textToVector(text, vocabulary);

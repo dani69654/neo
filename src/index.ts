@@ -11,6 +11,7 @@ import {
   trainAndLearnMultiply,
   trainAndLearnDivide,
   trainAndLearnMod,
+  trainAndLearnRecognizeFace,
   trainAndLearnDouble,
   trainAndLearnIsEven,
   trainAndLearnLanguage,
@@ -39,6 +40,7 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train multiply           train the multiply skill (ML)
   train divide             train the divide skill (ML)
   train mod                train the mod skill (ML)
+  train recognizeFace      train face recognition (ML — add photos to data/faces/<name>/ first)
   train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -64,6 +66,10 @@ Anything else is treated as a free-form message to Neo, e.g.:
   divide 20 by 4
   20 mod 3
   double 21
+  who is in data/faces/<name>/<photo>.jpg
+
+Add photos under data/faces/<name>/ before training recognizeFace.
+After adding new language intents, run "train language" (or "npm run train-all").
 `);
 }
 
@@ -108,6 +114,9 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'mod') {
         await trainAndLearnMod(neo);
         console.log('Skill "mod" learned.');
+      } else if (rest[0] === 'recognizeFace') {
+        await trainAndLearnRecognizeFace(neo);
+        console.log('Skill "recognizeFace" learned.');
       } else if (rest[0] === 'double') {
         await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
@@ -133,7 +142,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train double | train language',
+          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train recognizeFace | train double | train language',
         );
       }
       break;
@@ -156,6 +165,13 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
           console.log(toSkillResultJson(await neo.use(rest[0], a, b)));
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Calculation failed.');
+        }
+      } else if (rest[0] === 'recognizeFace' && rest[1] !== undefined) {
+        try {
+          await ensureSkill(neo, 'recognizeFace');
+          console.log(toSkillResultJson(await neo.use('recognizeFace', rest[1])));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Face recognition failed.');
         }
       } else if (rest[0] === 'double' && rest[1] !== undefined) {
         const n = Number(rest[1]);
@@ -183,7 +199,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
       } else {
         console.log(
-          'Usage: use add <a> <b> | use subtract <a> <b> | use multiply <a> <b> | use divide <a> <b> | use mod <a> <b> | use double <n> | use isEven <n>',
+          'Usage: use add <a> <b> | ... | use mod <a> <b> | use recognizeFace <image> | use double <n> | use isEven <n>',
         );
       }
       break;

@@ -11,10 +11,12 @@ import { ensureLanguageReady, ensureSkill } from './skillBootstrap';
 import { useLanguage } from '../skills/language/language';
 import type { Intent } from '../skills/language/languageTestdata';
 import type { ChitchatTopic } from '../skills/chitchat/chitchatTestdata';
+import type { RecognizeFaceValue } from '../skills/recognizeFace/recognizeFace';
 
 const UNARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
 const BINARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['add', 'subtract', 'multiply', 'divide', 'mod']);
 const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources']);
+const FACE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['recognizeFace']);
 
 function describeActionResult(intent: Intent, raw: unknown, numbers: number[]): string {
   const result = unwrapResult(raw);
@@ -54,7 +56,7 @@ export class Chat {
   /** Understands `text` and returns Neo's reply (empty string after a screen clear). */
   async handle(text: string): Promise<string> {
     await ensureLanguageReady();
-    const { intent, numbers, chainEval } = await useLanguage(text);
+    const { intent, numbers, chainEval, imagePath } = await useLanguage(text);
 
     if (chainEval) {
       try {
@@ -70,6 +72,28 @@ export class Chat {
       const raw = await this.neo.use(intent);
       const text = formatSkillResult(raw);
       return unwrapResult(raw) === '' ? '' : text;
+    }
+
+    if (FACE_ACTION_INTENTS.has(intent)) {
+      if (!imagePath) return this.reply('missingArg');
+      await ensureSkill(this.neo, 'recognizeFace');
+      try {
+        const raw = await this.neo.use('recognizeFace', imagePath);
+        const { name, unknown, uncertain } = unwrapResult(raw) as RecognizeFaceValue;
+        const suffix = confidenceSuffix(unwrapConfidence(raw));
+        if (unknown) {
+          return (
+            `I don't recognize this face — it doesn't match anyone I was trained on${suffix}. ` +
+            'Add photos under data/faces/<name>/ and run "train recognizeFace".'
+          );
+        }
+        if (uncertain) {
+          return `I'm not sure — maybe ${name}${suffix}.`;
+        }
+        return `That's ${name}${suffix}.`;
+      } catch (err) {
+        return err instanceof Error ? err.message : 'Face recognition failed.';
+      }
     }
 
     if (BINARY_ACTION_INTENTS.has(intent)) {

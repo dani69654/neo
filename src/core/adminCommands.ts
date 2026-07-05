@@ -57,6 +57,9 @@ const SKILL_SYNONYMS: Record<string, string> = {
   mod: 'mod',
   modulo: 'mod',
   remainder: 'mod',
+  recognizeFace: 'recognizeFace',
+  face: 'recognizeFace',
+  faces: 'recognizeFace',
 };
 
 export interface ParsedAdminCommand {
