@@ -1,7 +1,8 @@
 import type { Intent } from './languageTestdata';
 
 type BinaryMathIntent = 'add' | 'subtract' | 'multiply' | 'divide';
-type Op = '+' | '-' | '*' | '/';
+export type ChainOp = '+' | '-' | '*' | '/';
+type Op = ChainOp;
 
 export interface MathParseResult {
   intent: BinaryMathIntent;
@@ -130,18 +131,34 @@ function evaluateTokens(tokens: Array<number | Op>): number {
   return result;
 }
 
+export interface ChainParseResult {
+  display: string;
+  tokens: Array<number | ChainOp>;
+}
+
 /**
- * Evaluates inline arithmetic chains such as "1 + 4 - 3" or "2 * 3 + 4".
- * Returns null when the text contains words or is not a valid expression.
+ * Parses multi-operator inline expressions such as "1 + 4 - 3" or "2*9/3".
+ * Single binary ops (e.g. "2+1") return null — those use a dedicated skill directly.
  */
-export function evaluateChainExpression(text: string): ChainEvalResult | null {
+export function parseChainExpression(text: string): ChainParseResult | null {
   const display = text.trim();
   if (!display || !INLINE_EXPR.test(display)) return null;
 
   const tokens = tokenizeInlineExpression(display.replace(/\s+/g, ' ').trim());
   if (!tokens) return null;
 
-  return { display, result: evaluateTokens(tokens) };
+  return { display, tokens };
+}
+
+/**
+ * Evaluates inline arithmetic chains such as "1 + 4 - 3" or "2 * 3 + 4".
+ * Returns null when the text contains words or is not a valid expression.
+ */
+export function evaluateChainExpression(text: string): ChainEvalResult | null {
+  const parsed = parseChainExpression(text);
+  if (!parsed) return null;
+
+  return { display: parsed.display, result: evaluateTokens(parsed.tokens) };
 }
 
 /**

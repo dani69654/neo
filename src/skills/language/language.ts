@@ -14,7 +14,7 @@ import {
   intentToVector,
   textToVector,
 } from './languageTestdata';
-import { evaluateChainExpression, parseMathExpression } from './mathParser';
+import { parseChainExpression, parseMathExpression } from './mathParser';
 
 const EPOCHS_TRAIN_LANGUAGE = 300;
 
@@ -40,8 +40,8 @@ export interface ParsedCommand {
   numbers: number[];
   /** Model confidence in the predicted intent, from 0 to 1. */
   confidence: number;
-  /** Set when the input is a multi-step inline expression such as "1 + 4 - 3". */
-  chainEval?: { display: string; result: number };
+  /** Set when the input is a multi-step inline expression such as "2*9/3". */
+  chainEval?: { display: string };
 }
 
 /**
@@ -87,9 +87,9 @@ export const useLanguage = async (text: string): Promise<ParsedCommand> => {
     return { intent: math.intent, numbers: [...math.numbers], confidence: 1 };
   }
 
-  const chain = evaluateChainExpression(text);
+  const chain = parseChainExpression(text);
   if (chain) {
-    return { intent: 'add', numbers: [], confidence: 1, chainEval: chain };
+    return { intent: 'add', numbers: [], confidence: 1, chainEval: { display: chain.display } };
   }
 
   const vector = textToVector(text, vocabulary);

@@ -7,6 +7,8 @@ import type { Neo, Skill } from './Neo';
 import { registerBasicSkills } from './basicSkills';
 import { trainAdd, useAdd } from '../skills/add/add';
 import { trainSubtract, useSubtract } from '../skills/subtract/subtract';
+import { trainMultiply, useMultiply } from '../skills/multiply/multiply';
+import { trainDivide, useDivide } from '../skills/divide/divide';
 import { trainDouble, useDouble } from '../skills/double/double';
 import { trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -50,6 +52,22 @@ export async function trainAndLearnSubtract(neo: Neo): Promise<void> {
   });
 }
 
+export async function trainAndLearnMultiply(neo: Neo): Promise<void> {
+  await runOnce('multiply', async () => {
+    console.log('Training multiply...');
+    await trainMultiply();
+    neo.learn('multiply', useMultiply as Skill);
+  });
+}
+
+export async function trainAndLearnDivide(neo: Neo): Promise<void> {
+  await runOnce('divide', async () => {
+    console.log('Training divide...');
+    await trainDivide();
+    neo.learn('divide', useDivide as Skill);
+  });
+}
+
 export async function trainAndLearnDouble(neo: Neo): Promise<void> {
   await runOnce('double', async () => {
     console.log('Training double...');
@@ -77,6 +95,16 @@ export async function ensureSkill(neo: Neo, name: string): Promise<void> {
 
   if (name === 'subtract') {
     if (!neo.knows('subtract')) await trainAndLearnSubtract(neo);
+    return;
+  }
+
+  if (name === 'multiply') {
+    if (!neo.knows('multiply')) await trainAndLearnMultiply(neo);
+    return;
+  }
+
+  if (name === 'divide') {
+    if (!neo.knows('divide')) await trainAndLearnDivide(neo);
     return;
   }
 

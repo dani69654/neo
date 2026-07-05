@@ -5,7 +5,8 @@
  */
 
 import type { Neo } from './Neo';
-import { CERTAIN, confidenceSuffix, formatSkillResult, unwrapConfidence, unwrapResult } from './skillResult';
+import { confidenceSuffix, formatSkillResult, unwrapConfidence, unwrapResult } from './skillResult';
+import { evaluateChainWithSkills } from './chainEvaluator';
 import { ensureLanguageReady, ensureSkill } from './skillBootstrap';
 import { useLanguage } from '../skills/language/language';
 import type { Intent } from '../skills/language/languageTestdata';
@@ -54,7 +55,12 @@ export class Chat {
     const { intent, numbers, chainEval } = await useLanguage(text);
 
     if (chainEval) {
-      return `${chainEval.display} = ${chainEval.result}${confidenceSuffix(CERTAIN)}.`;
+      try {
+        const raw = await evaluateChainWithSkills(this.neo, text);
+        return `${chainEval.display} = ${unwrapResult(raw)}${confidenceSuffix(unwrapConfidence(raw))}.`;
+      } catch (err) {
+        return err instanceof Error ? err.message : 'Calculation failed.';
+      }
     }
 
     if (IMMEDIATE_ACTION_INTENTS.has(intent)) {

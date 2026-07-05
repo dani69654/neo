@@ -7,6 +7,8 @@ import {
   ensureSkill,
   trainAndLearnAdd,
   trainAndLearnSubtract,
+  trainAndLearnMultiply,
+  trainAndLearnDivide,
   trainAndLearnDouble,
   trainAndLearnIsEven,
 } from './core/skillBootstrap';
@@ -32,6 +34,8 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   run sum 10 7             same as use add 10 7
   train add                train the add skill (ML)
   train subtract           train the subtract skill (ML)
+  train multiply           train the multiply skill (ML)
+  train divide             train the divide skill (ML)
   train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -45,8 +49,8 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   has <name>               same as knows <name>
   exit                     quit
 
-Basic skills (multiply, divide, clear, resources, chitchat) load at startup.
-Add and subtract are ML — run train add / train subtract before use.
+Basic skills (clear, resources, chitchat) load at startup.
+Math skills (add, subtract, multiply, divide) are ML — auto-trained on first use in chat.
 
 Anything else is treated as a free-form message to Neo, e.g.:
   hi
@@ -88,6 +92,12 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'subtract') {
         await trainAndLearnSubtract(neo);
         console.log('Skill "subtract" learned.');
+      } else if (rest[0] === 'multiply') {
+        await trainAndLearnMultiply(neo);
+        console.log('Skill "multiply" learned.');
+      } else if (rest[0] === 'divide') {
+        await trainAndLearnDivide(neo);
+        console.log('Skill "divide" learned.');
       } else if (rest[0] === 'double') {
         await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
@@ -114,7 +124,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train add | train subtract | train double | train isEven [bits] | train language',
+          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train double | train language',
         );
       }
       break;
