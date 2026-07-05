@@ -29,6 +29,11 @@ const OP_TO_INTENT: Record<string, BinaryMathIntent> = {
 
 const INLINE_EXPR = /^[\d\s+\-*/x×÷.,]+$/;
 
+/** Removes trailing sentence punctuation so "9+9?" still parses as math. */
+function stripTrailingPunctuation(text: string): string {
+  return text.trim().replace(/[?.!]+$/, '').trim();
+}
+
 function normalizeOp(char: string): Op | null {
   if (char === '+' ) return '+';
   if (char === '-') return '-';
@@ -141,7 +146,7 @@ export interface ChainParseResult {
  * Single binary ops (e.g. "2+1") return null — those use a dedicated skill directly.
  */
 export function parseChainExpression(text: string): ChainParseResult | null {
-  const display = text.trim();
+  const display = stripTrailingPunctuation(text);
   if (!display || !INLINE_EXPR.test(display)) return null;
 
   const tokens = tokenizeInlineExpression(display.replace(/\s+/g, ' ').trim());
@@ -166,7 +171,7 @@ export function evaluateChainExpression(text: string): ChainEvalResult | null {
  * Multi-operator inline chains are handled by {@link evaluateChainExpression}.
  */
 export function parseMathExpression(text: string): MathParseResult | null {
-  const normalized = text.trim().toLowerCase();
+  const normalized = stripTrailingPunctuation(text).toLowerCase();
 
   let match = normalized.match(
     new RegExp(`subtract\\s+(${NUMBER})\\s+(?:from|to)\\s+(${NUMBER})`),
