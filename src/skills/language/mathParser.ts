@@ -64,10 +64,24 @@ function tokenizeInlineExpression(text: string): Array<number | Op> | null {
     const remaining = text.slice(index);
     const numberMatch = remaining.match(/^-?\d+(?:\.\d+)?/);
     if (numberMatch) {
-      if (tokens.length > 0 && typeof tokens[tokens.length - 1] === 'number') return null;
-      tokens.push(Number(numberMatch[0]));
-      index += numberMatch[0].length;
-      continue;
+      const lastIsNumber = tokens.length > 0 && typeof tokens[tokens.length - 1] === 'number';
+      const matchedNegative = numberMatch[0].startsWith('-');
+
+      if (lastIsNumber && !matchedNegative) return null;
+      // After a number, "-3" is the minus operator followed by 3.
+      if (lastIsNumber && matchedNegative) {
+        // fall through to operator handling below
+      } else if (
+        matchedNegative &&
+        tokens.length > 0 &&
+        typeof tokens[tokens.length - 1] !== 'number'
+      ) {
+        // fall through to operator handling below
+      } else {
+        tokens.push(Number(numberMatch[0]));
+        index += numberMatch[0].length;
+        continue;
+      }
     }
 
     const op = normalizeOp(text[index]);
@@ -83,6 +97,8 @@ function tokenizeInlineExpression(text: string): Array<number | Op> | null {
 
   if (tokens.length < 3 || tokens.length % 2 === 0) return null;
   if (typeof tokens[tokens.length - 1] !== 'number') return null;
+  // Single binary ops (e.g. "2+1") use the matching skill instead.
+  if (tokens.length === 3) return null;
   return tokens as Array<number | Op>;
 }
 
@@ -165,7 +181,7 @@ export function parseMathExpression(text: string): MathParseResult | null {
   if (match) return { intent: 'divide', numbers: [Number(match[1]), Number(match[2])] };
 
   // Single inline operation only — chains are handled separately.
-  match = normalized.match(new RegExp(`(${NUMBER})\\s*([+\\-*/x×÷])\\s*(${NUMBER})`));
+  match = normalized.match(new RegExp(`^(${NUMBER})\\s*([+\\-*/x×÷])\\s*(${NUMBER})$`));
   if (match) {
     const intent = OP_TO_INTENT[match[2]];
     if (intent) return { intent, numbers: [Number(match[1]), Number(match[3])] };

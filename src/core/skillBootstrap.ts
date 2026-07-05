@@ -5,6 +5,8 @@
 
 import type { Neo, Skill } from './Neo';
 import { registerBasicSkills } from './basicSkills';
+import { trainAdd, useAdd } from '../skills/add/add';
+import { trainSubtract, useSubtract } from '../skills/subtract/subtract';
 import { trainDouble, useDouble } from '../skills/double/double';
 import { trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -32,6 +34,22 @@ export async function ensureLanguageReady(): Promise<void> {
   });
 }
 
+export async function trainAndLearnAdd(neo: Neo): Promise<void> {
+  await runOnce('add', async () => {
+    console.log('Training add...');
+    await trainAdd();
+    neo.learn('add', useAdd as Skill);
+  });
+}
+
+export async function trainAndLearnSubtract(neo: Neo): Promise<void> {
+  await runOnce('subtract', async () => {
+    console.log('Training subtract...');
+    await trainSubtract();
+    neo.learn('subtract', useSubtract as Skill);
+  });
+}
+
 export async function trainAndLearnDouble(neo: Neo): Promise<void> {
   await runOnce('double', async () => {
     console.log('Training double...');
@@ -51,6 +69,16 @@ export async function trainAndLearnIsEven(neo: Neo, bits: number = DEFAULT_BITS)
 /** Ensures a skill is ready to use, training it first when necessary. */
 export async function ensureSkill(neo: Neo, name: string): Promise<void> {
   registerBasicSkills(neo);
+
+  if (name === 'add') {
+    if (!neo.knows('add')) await trainAndLearnAdd(neo);
+    return;
+  }
+
+  if (name === 'subtract') {
+    if (!neo.knows('subtract')) await trainAndLearnSubtract(neo);
+    return;
+  }
 
   if (name === 'double') {
     if (!neo.knows('double')) await trainAndLearnDouble(neo);

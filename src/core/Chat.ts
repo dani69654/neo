@@ -5,6 +5,7 @@
  */
 
 import type { Neo } from './Neo';
+import { CERTAIN, confidenceSuffix, formatSkillResult, unwrapConfidence, unwrapResult } from './skillResult';
 import { ensureLanguageReady, ensureSkill } from './skillBootstrap';
 import { useLanguage } from '../skills/language/language';
 import type { Intent } from '../skills/language/languageTestdata';
@@ -14,25 +15,28 @@ const UNARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
 const BINARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['add', 'subtract', 'multiply', 'divide']);
 const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources']);
 
-function describeActionResult(intent: Intent, result: unknown, numbers: number[]): string {
+function describeActionResult(intent: Intent, raw: unknown, numbers: number[]): string {
+  const result = unwrapResult(raw);
+  const suffix = confidenceSuffix(unwrapConfidence(raw));
+
   switch (intent) {
     case 'double':
-      return `The double of ${numbers[0]} is ${result}.`;
+      return `The double of ${numbers[0]} is ${result}${suffix}.`;
     case 'isEven': {
-      const { isEven, confidence } = result as { isEven: boolean; confidence: number };
+      const { isEven } = result as { isEven: boolean };
       const label = isEven ? 'even' : 'odd';
-      return `${numbers[0]} is ${label} (confidence: ${(confidence * 100).toFixed(1)}%).`;
+      return `${numbers[0]} is ${label}${suffix}.`;
     }
     case 'add':
-      return `${numbers[0]} + ${numbers[1]} = ${result}.`;
+      return `${numbers[0]} + ${numbers[1]} = ${result}${suffix}.`;
     case 'subtract':
-      return `${numbers[0]} - ${numbers[1]} = ${result}.`;
+      return `${numbers[0]} - ${numbers[1]} = ${result}${suffix}.`;
     case 'multiply':
-      return `${numbers[0]} × ${numbers[1]} = ${result}.`;
+      return `${numbers[0]} × ${numbers[1]} = ${result}${suffix}.`;
     case 'divide':
-      return `${numbers[0]} ÷ ${numbers[1]} = ${result}.`;
+      return `${numbers[0]} ÷ ${numbers[1]} = ${result}${suffix}.`;
     default:
-      return String(result);
+      return formatSkillResult(raw);
   }
 }
 
@@ -41,7 +45,7 @@ export class Chat {
 
   private async reply(topic: ChitchatTopic): Promise<string> {
     await ensureSkill(this.neo, 'chitchat');
-    return (await this.neo.use('chitchat', topic)) as string;
+    return formatSkillResult(await this.neo.use('chitchat', topic));
   }
 
   /** Understands `text` and returns Neo's reply (empty string after a screen clear). */
@@ -50,20 +54,22 @@ export class Chat {
     const { intent, numbers, chainEval } = await useLanguage(text);
 
     if (chainEval) {
-      return `${chainEval.display} = ${chainEval.result}.`;
+      return `${chainEval.display} = ${chainEval.result}${confidenceSuffix(CERTAIN)}.`;
     }
 
     if (IMMEDIATE_ACTION_INTENTS.has(intent)) {
       await ensureSkill(this.neo, intent);
-      return (await this.neo.use(intent)) as string;
+      const raw = await this.neo.use(intent);
+      const text = formatSkillResult(raw);
+      return unwrapResult(raw) === '' ? '' : text;
     }
 
     if (BINARY_ACTION_INTENTS.has(intent)) {
       if (numbers.length < 2) return this.reply('missingArg');
       await ensureSkill(this.neo, intent);
       try {
-        const result = await this.neo.use(intent, numbers[0], numbers[1]);
-        return describeActionResult(intent, result, numbers);
+        const raw = await this.neo.use(intent, numbers[0], numbers[1]);
+        return describeActionResult(intent, raw, numbers);
       } catch (err) {
         return err instanceof Error ? err.message : 'Calculation failed.';
       }
@@ -73,8 +79,8 @@ export class Chat {
       if (numbers.length < 1) return this.reply('missingArg');
       await ensureSkill(this.neo, intent);
       try {
-        const result = await this.neo.use(intent, numbers[0]);
-        return describeActionResult(intent, result, numbers);
+        const raw = await this.neo.use(intent, numbers[0]);
+        return describeActionResult(intent, raw, numbers);
       } catch (err) {
         return err instanceof Error ? err.message : 'Calculation failed.';
       }

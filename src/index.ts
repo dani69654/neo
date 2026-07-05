@@ -5,6 +5,8 @@ import { isAdminCommand, parseAdminCommand } from './core/adminCommands';
 import { registerBasicSkills } from './core/basicSkills';
 import {
   ensureSkill,
+  trainAndLearnAdd,
+  trainAndLearnSubtract,
   trainAndLearnDouble,
   trainAndLearnIsEven,
 } from './core/skillBootstrap';
@@ -13,6 +15,7 @@ import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 import { useClear } from './skills/clear/clear';
 import { useResources } from './skills/resources/resources';
 import { useChitchat } from './skills/chitchat/chitchat';
+import { formatSkillResult, toSkillResultJson } from './core/skillResult';
 
 const neo = new Neo();
 const chat = new Chat(neo);
@@ -25,8 +28,10 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   help                     show this message
   clear / cls / clean      clear the terminal (also: "clear screen" in chat)
   stats / memory / usage   show Neo process resource usage
-  use add 5 3              add two numbers (also: subtract, multiply, divide)
+  use add 5 3              add two numbers (train add first — ML skill)
   run sum 10 7             same as use add 10 7
+  train add                train the add skill (ML)
+  train subtract           train the subtract skill (ML)
   train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -40,7 +45,8 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   has <name>               same as knows <name>
   exit                     quit
 
-Basic skills (add, subtract, multiply, divide, clear, resources, chitchat) load at startup.
+Basic skills (multiply, divide, clear, resources, chitchat) load at startup.
+Add and subtract are ML — run train add / train subtract before use.
 
 Anything else is treated as a free-form message to Neo, e.g.:
   hi
@@ -69,14 +75,20 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
 
     case 'stats':
       if (neo.knows('resources')) {
-        console.log(neo.use('resources'));
+        console.log(formatSkillResult(neo.use('resources')));
       } else {
         console.log('Skill "resources" not available.');
       }
       break;
 
     case 'train':
-      if (rest[0] === 'double') {
+      if (rest[0] === 'add') {
+        await trainAndLearnAdd(neo);
+        console.log('Skill "add" learned.');
+      } else if (rest[0] === 'subtract') {
+        await trainAndLearnSubtract(neo);
+        console.log('Skill "subtract" learned.');
+      } else if (rest[0] === 'double') {
         await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
       } else if (rest[0] === 'isEven') {
@@ -102,7 +114,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train double | train isEven [bits] | train language | learn chitchat | learn clear | learn resources',
+          'Unknown skill. Try: train add | train subtract | train double | train isEven [bits] | train language',
         );
       }
       break;
@@ -122,7 +134,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
         try {
           await ensureSkill(neo, rest[0]);
-          console.log(await neo.use(rest[0], a, b));
+          console.log(toSkillResultJson(await neo.use(rest[0], a, b)));
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Calculation failed.');
         }
@@ -134,7 +146,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
         try {
           await ensureSkill(neo, 'double');
-          console.log(await neo.use('double', n));
+          console.log(toSkillResultJson(await neo.use('double', n)));
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Prediction failed.');
         }
@@ -146,12 +158,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
         try {
           await ensureSkill(neo, 'isEven');
-          const { isEven, confidence } = (await neo.use('isEven', n)) as {
-            isEven: boolean;
-            confidence: number;
-          };
-          const label = isEven ? 'even' : 'odd';
-          console.log(`${label} (confidence: ${(confidence * 100).toFixed(1)}%)`);
+          console.log(toSkillResultJson(await neo.use('isEven', n)));
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Prediction failed.');
         }

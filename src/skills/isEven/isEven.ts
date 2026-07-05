@@ -5,6 +5,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node';
+import { skillResult, type SkillResult } from '../../core/skillResult';
 import {
   DEFAULT_BITS,
   EPOCHS_TRAIN_IS_EVEN,
@@ -19,10 +20,8 @@ let model: tf.Sequential | null = null;
 // bit width used at training time, otherwise the input shape won't match.
 let trainedBits: number = DEFAULT_BITS;
 
-export interface IsEvenResult {
+export interface IsEvenValue {
   isEven: boolean;
-  /** Model confidence in the prediction, from 0.5 (unsure) to 1 (certain). */
-  confidence: number;
 }
 
 /**
@@ -57,7 +56,7 @@ export const trainIsEven = async (bits: number = DEFAULT_BITS): Promise<void> =>
   ys.dispose();
 };
 
-export const useIsEven = async (x: number): Promise<IsEvenResult> => {
+export const useIsEven = async (x: number): Promise<SkillResult<IsEvenValue>> => {
   if (!model) throw new Error('Skill isEven not trained yet. Run "train isEven" first.');
 
   const maxValue = maxValueForBits(trainedBits);
@@ -75,5 +74,5 @@ export const useIsEven = async (x: number): Promise<IsEvenResult> => {
   const isEven = value > 0.5;
   const confidence = isEven ? value : 1 - value;
 
-  return { isEven, confidence };
+  return skillResult({ isEven }, confidence);
 };

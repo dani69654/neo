@@ -82,14 +82,14 @@ export function isLanguageTrained(): boolean {
 export const useLanguage = async (text: string): Promise<ParsedCommand> => {
   if (!model) throw new Error('Skill language not trained yet. Run "train language" first.');
 
-  const chain = evaluateChainExpression(text);
-  if (chain) {
-    return { intent: 'add', numbers: [], confidence: 1, chainEval: chain };
-  }
-
   const math = parseMathExpression(text);
   if (math) {
     return { intent: math.intent, numbers: [...math.numbers], confidence: 1 };
+  }
+
+  const chain = evaluateChainExpression(text);
+  if (chain) {
+    return { intent: 'add', numbers: [], confidence: 1, chainEval: chain };
   }
 
   const vector = textToVector(text, vocabulary);

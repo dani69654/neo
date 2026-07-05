@@ -6,7 +6,8 @@
  */
 
 import { pickResponse, type ChitchatTopic } from './chitchatTestdata';
+import { skillResult, type SkillResult } from '../../core/skillResult';
 
-export const useChitchat = (topic: ChitchatTopic): string => {
-  return pickResponse(topic);
+export const useChitchat = (topic: ChitchatTopic): SkillResult<string> => {
+  return skillResult(pickResponse(topic));
 };

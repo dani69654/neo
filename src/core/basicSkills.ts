@@ -3,8 +3,6 @@
  */
 
 import type { Neo, Skill } from './Neo';
-import { useAdd } from '../skills/add/add';
-import { useSubtract } from '../skills/subtract/subtract';
 import { useMultiply } from '../skills/multiply/multiply';
 import { useDivide } from '../skills/divide/divide';
 import { useClear } from '../skills/clear/clear';
@@ -12,8 +10,6 @@ import { useResources } from '../skills/resources/resources';
 import { useChitchat } from '../skills/chitchat/chitchat';
 
 const BASIC_SKILLS: ReadonlyArray<[string, Skill]> = [
-  ['add', useAdd as Skill],
-  ['subtract', useSubtract as Skill],
   ['multiply', useMultiply as Skill],
   ['divide', useDivide as Skill],
   ['clear', useClear as Skill],

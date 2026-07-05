@@ -3,6 +3,8 @@
  * Rule-based — no training required.
  */
 
+import { skillResult, type SkillResult } from '../../core/skillResult';
+
 function formatMegabytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
@@ -14,16 +16,18 @@ function formatSeconds(seconds: number): string {
   return `${minutes}m ${remainder.toFixed(0)}s`;
 }
 
-export const useResources = (): string => {
+export const useResources = (): SkillResult<string> => {
   const memory = process.memoryUsage();
   const cpu = process.cpuUsage();
 
-  return [
-    'Neo resource usage:',
-    `  Uptime: ${formatSeconds(process.uptime())}`,
-    `  Memory (RSS): ${formatMegabytes(memory.rss)}`,
-    `  Heap used: ${formatMegabytes(memory.heapUsed)} / ${formatMegabytes(memory.heapTotal)}`,
-    `  External: ${formatMegabytes(memory.external)}`,
-    `  CPU user: ${formatSeconds(cpu.user / 1e6)}  system: ${formatSeconds(cpu.system / 1e6)}`,
-  ].join('\n');
+  return skillResult(
+    [
+      'Neo resource usage:',
+      `  Uptime: ${formatSeconds(process.uptime())}`,
+      `  Memory (RSS): ${formatMegabytes(memory.rss)}`,
+      `  Heap used: ${formatMegabytes(memory.heapUsed)} / ${formatMegabytes(memory.heapTotal)}`,
+      `  External: ${formatMegabytes(memory.external)}`,
+      `  CPU user: ${formatSeconds(cpu.user / 1e6)}  system: ${formatSeconds(cpu.system / 1e6)}`,
+    ].join('\n'),
+  );
 };

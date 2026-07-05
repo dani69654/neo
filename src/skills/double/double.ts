@@ -6,6 +6,7 @@
 
 import { DOUBLE_TEST_DATA, EPOCHS_TRAIN_DOUBLE } from './doubleTestdata';
 import * as tf from '@tensorflow/tfjs-node';
+import { skillResult, type SkillResult } from '../../core/skillResult';
 
 let model: tf.Sequential | null = null;
 
@@ -20,10 +21,10 @@ export const trainDouble = async (): Promise<void> => {
   );
 };
 
-export const useDouble = async (x: number): Promise<number> => {
+export const useDouble = async (x: number): Promise<SkillResult<number>> => {
   if (!model) throw new Error('Skill double not trained yet. Run "train double" first.');
   const result = model.predict(tf.tensor2d([x], [1, 1])) as tf.Tensor;
   const value = result.dataSync()[0];
   result.dispose();
-  return value;
+  return skillResult(value);
 };
