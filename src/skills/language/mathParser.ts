@@ -1,6 +1,6 @@
 import type { Intent } from './languageTestdata';
 
-type BinaryMathIntent = 'add' | 'subtract' | 'multiply' | 'divide';
+type BinaryMathIntent = 'add' | 'subtract' | 'multiply' | 'divide' | 'mod';
 export type ChainOp = '+' | '-' | '*' | '/';
 type Op = ChainOp;
 
@@ -202,9 +202,21 @@ export function parseMathExpression(text: string): MathParseResult | null {
   match = normalized.match(new RegExp(`divide\\s+(${NUMBER})\\s+by\\s+(${NUMBER})`));
   if (match) return { intent: 'divide', numbers: [Number(match[1]), Number(match[2])] };
 
+  match = normalized.match(new RegExp(`(${NUMBER})\\s+mod(?:ulo)?\\s+(${NUMBER})`));
+  if (match) return { intent: 'mod', numbers: [Number(match[1]), Number(match[2])] };
+
+  match = normalized.match(new RegExp(`(${NUMBER})\\s*%\\s*(${NUMBER})`));
+  if (match) return { intent: 'mod', numbers: [Number(match[1]), Number(match[2])] };
+
+  match = normalized.match(
+    new RegExp(`remainder\\s+of\\s+(${NUMBER})\\s+divided\\s+by\\s+(${NUMBER})`),
+  );
+  if (match) return { intent: 'mod', numbers: [Number(match[1]), Number(match[2])] };
+
   // Single inline operation only — chains are handled separately.
-  match = normalized.match(new RegExp(`^(${NUMBER})\\s*([+\\-*/x×÷])\\s*(${NUMBER})$`));
+  match = normalized.match(new RegExp(`^(${NUMBER})\\s*([+\\-*/x×÷%])\\s*(${NUMBER})$`));
   if (match) {
+    if (match[2] === '%') return { intent: 'mod', numbers: [Number(match[1]), Number(match[3])] };
     const intent = OP_TO_INTENT[match[2]];
     if (intent) return { intent, numbers: [Number(match[1]), Number(match[3])] };
   }
@@ -214,5 +226,5 @@ export function parseMathExpression(text: string): MathParseResult | null {
 
 /** Returns true when the intent is one of the four primitive binary math skills. */
 export function isBinaryMathIntent(intent: Intent): intent is BinaryMathIntent {
-  return intent === 'add' || intent === 'subtract' || intent === 'multiply' || intent === 'divide';
+  return intent === 'add' || intent === 'subtract' || intent === 'multiply' || intent === 'divide' || intent === 'mod';
 }

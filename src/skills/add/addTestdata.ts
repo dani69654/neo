@@ -1,3 +1,5 @@
+import { createRng } from '../../utils/createRng';
+
 /** Max operand value used when generating random training pairs. */
 export const ADD_MAX_OPERAND = 100_000;
 
@@ -8,14 +10,6 @@ export const EPOCHS_TRAIN_ADD = 50;
 
 /** Fixed seed so retraining gives consistent weights. */
 export const ADD_TRAINING_SEED = 42;
-
-function createRng(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
-    return state / 2 ** 32;
-  };
-}
 
 /** Builds random addition examples: [a, b] → a + b. */
 export function generateAddTrainingData(

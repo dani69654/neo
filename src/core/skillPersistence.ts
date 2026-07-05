@@ -9,6 +9,7 @@ import { loadAddModel, saveAddModel, trainAdd, useAdd } from '../skills/add/add'
 import { loadSubtractModel, saveSubtractModel, trainSubtract, useSubtract } from '../skills/subtract/subtract';
 import { loadMultiplyModel, saveMultiplyModel, trainMultiply, useMultiply } from '../skills/multiply/multiply';
 import { loadDivideModel, saveDivideModel, trainDivide, useDivide } from '../skills/divide/divide';
+import { loadModModel, saveModModel, trainMod, useMod } from '../skills/mod/mod';
 import { loadDoubleModel, saveDoubleModel, trainDouble, useDouble } from '../skills/double/double';
 import { loadIsEvenModel, saveIsEvenModel, trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -42,6 +43,11 @@ export async function persistMultiplySkill(): Promise<void> {
 export async function persistDivideSkill(): Promise<void> {
   await saveDivideModel();
   markSkillTrained('divide');
+}
+
+export async function persistModSkill(): Promise<void> {
+  await saveModModel();
+  markSkillTrained('mod');
 }
 
 export async function persistDoubleSkill(): Promise<void> {
@@ -81,6 +87,11 @@ export async function loadPersistedSkills(neo: Neo): Promise<string[]> {
   if (getSkillState('divide') && (await loadDivideModel())) {
     neo.learn('divide', useDivide as Skill);
     restored.push('divide');
+  }
+
+  if (getSkillState('mod') && (await loadModModel())) {
+    neo.learn('mod', useMod as Skill);
+    restored.push('mod');
   }
 
   if (getSkillState('double') && (await loadDoubleModel())) {
@@ -124,6 +135,11 @@ export async function trainAllPersistedSkills(neo: Neo, isEvenBits: number = DEF
   await trainDivide();
   neo.learn('divide', useDivide as Skill);
   await persistDivideSkill();
+
+  console.log('Training mod...');
+  await trainMod();
+  neo.learn('mod', useMod as Skill);
+  await persistModSkill();
 
   console.log('Training double...');
   await trainDouble();

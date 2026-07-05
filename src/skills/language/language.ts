@@ -27,6 +27,7 @@ const INTENTS_WITH_NUMBERS: ReadonlySet<Intent> = new Set([
   'subtract',
   'multiply',
   'divide',
+  'mod',
 ]);
 
 let model: tf.Sequential | null = null;

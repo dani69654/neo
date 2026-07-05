@@ -12,6 +12,7 @@ import {
   persistDoubleSkill,
   persistIsEvenSkill,
   persistLanguageSkill,
+  persistModSkill,
   persistMultiplySkill,
   persistSubtractSkill,
 } from './skillPersistence';
@@ -19,6 +20,7 @@ import { loadAddModel, trainAdd, useAdd } from '../skills/add/add';
 import { loadSubtractModel, trainSubtract, useSubtract } from '../skills/subtract/subtract';
 import { loadMultiplyModel, trainMultiply, useMultiply } from '../skills/multiply/multiply';
 import { loadDivideModel, trainDivide, useDivide } from '../skills/divide/divide';
+import { loadModModel, trainMod, useMod } from '../skills/mod/mod';
 import { loadDoubleModel, trainDouble, useDouble } from '../skills/double/double';
 import { loadIsEvenModel, trainIsEven, useIsEven } from '../skills/isEven/isEven';
 import { DEFAULT_BITS } from '../skills/isEven/isEvenTestdata';
@@ -110,6 +112,19 @@ export async function trainAndLearnDivide(neo: Neo): Promise<void> {
   });
 }
 
+export async function trainAndLearnMod(neo: Neo): Promise<void> {
+  await runOnce('mod', async () => {
+    if (getSkillState('mod') && (await loadModModel())) {
+      neo.learn('mod', useMod as Skill);
+      return;
+    }
+    console.log('Training mod...');
+    await trainMod();
+    neo.learn('mod', useMod as Skill);
+    await persistModSkill();
+  });
+}
+
 export async function trainAndLearnDouble(neo: Neo): Promise<void> {
   await runOnce('double', async () => {
     if (getSkillState('double') && (await loadDoubleModel())) {
@@ -158,6 +173,11 @@ export async function ensureSkill(neo: Neo, name: string): Promise<void> {
 
   if (name === 'divide') {
     if (!neo.knows('divide')) await trainAndLearnDivide(neo);
+    return;
+  }
+
+  if (name === 'mod') {
+    if (!neo.knows('mod')) await trainAndLearnMod(neo);
     return;
   }
 

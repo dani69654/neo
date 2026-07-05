@@ -54,6 +54,9 @@ const SKILL_SYNONYMS: Record<string, string> = {
   times: 'multiply',
   divide: 'divide',
   div: 'divide',
+  mod: 'mod',
+  modulo: 'mod',
+  remainder: 'mod',
 };
 
 export interface ParsedAdminCommand {

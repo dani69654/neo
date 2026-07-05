@@ -14,6 +14,7 @@ export type Intent =
   | 'subtract'
   | 'multiply'
   | 'divide'
+  | 'mod'
   | 'clear'
   | 'resources'
   | 'greet'
@@ -31,6 +32,7 @@ export const INTENTS: Intent[] = [
   'subtract',
   'multiply',
   'divide',
+  'mod',
   'clear',
   'resources',
   'greet',
@@ -150,6 +152,23 @@ export const LANGUAGE_TRAINING_DATA: LanguageExample[] = [
   { text: 'quotient of 48 and 8', intent: 'divide' },
   { text: '12 divided by 3', intent: 'divide' },
   { text: '100 over 4', intent: 'divide' },
+
+  // mod
+  { text: '20 mod 3', intent: 'mod' },
+  { text: '17 modulo 5', intent: 'mod' },
+  { text: 'what is 20 mod 3', intent: 'mod' },
+  { text: 'what is 17 modulo 5', intent: 'mod' },
+  { text: 'remainder of 20 divided by 3', intent: 'mod' },
+  { text: 'remainder of 17 divided by 5', intent: 'mod' },
+  { text: 'mod 100 7', intent: 'mod' },
+  { text: 'please calculate 99 mod 10', intent: 'mod' },
+  { text: 'what is the remainder of 23 divided by 4', intent: 'mod' },
+  { text: '10 mod 3', intent: 'mod' },
+  { text: '10%3', intent: 'mod' },
+  { text: 'what is 10%3', intent: 'mod' },
+  { text: 'can you tell me the result of 10 mod 3', intent: 'mod' },
+  { text: 'can you tell me the result of 10%3', intent: 'mod' },
+  { text: 'result of 17%5', intent: 'mod' },
 
   // clear
   { text: 'clear', intent: 'clear' },

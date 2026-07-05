@@ -13,7 +13,7 @@ import type { Intent } from '../skills/language/languageTestdata';
 import type { ChitchatTopic } from '../skills/chitchat/chitchatTestdata';
 
 const UNARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
-const BINARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['add', 'subtract', 'multiply', 'divide']);
+const BINARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['add', 'subtract', 'multiply', 'divide', 'mod']);
 const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources']);
 
 function describeActionResult(intent: Intent, raw: unknown, numbers: number[]): string {
@@ -36,6 +36,8 @@ function describeActionResult(intent: Intent, raw: unknown, numbers: number[]): 
       return `${numbers[0]} × ${numbers[1]} = ${result}${suffix}.`;
     case 'divide':
       return `${numbers[0]} ÷ ${numbers[1]} = ${result}${suffix}.`;
+    case 'mod':
+      return `${numbers[0]} mod ${numbers[1]} = ${result}${suffix}.`;
     default:
       return formatSkillResult(raw);
   }

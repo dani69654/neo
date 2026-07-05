@@ -10,6 +10,7 @@ import {
   trainAndLearnSubtract,
   trainAndLearnMultiply,
   trainAndLearnDivide,
+  trainAndLearnMod,
   trainAndLearnDouble,
   trainAndLearnIsEven,
   trainAndLearnLanguage,
@@ -23,7 +24,7 @@ import { formatSkillResult, toSkillResultJson } from './core/skillResult';
 const neo = new Neo();
 const chat = new Chat(neo);
 
-const BINARY_MATH_SKILLS = new Set(['add', 'subtract', 'multiply', 'divide']);
+const BINARY_MATH_SKILLS = new Set(['add', 'subtract', 'multiply', 'divide', 'mod']);
 
 function printHelp(): void {
   console.log(`
@@ -37,6 +38,7 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train subtract           train the subtract skill (ML)
   train multiply           train the multiply skill (ML)
   train divide             train the divide skill (ML)
+  train mod                train the mod skill (ML)
   train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -54,12 +56,13 @@ Trained skills are saved under data/models/ and restored on startup.
 Run "npm run train-all" to train everything once and persist to disk.
 
 Basic skills (clear, resources, chitchat) load at startup.
-Math skills (add, subtract, multiply, divide) are ML — auto-trained on first use in chat.
+Math skills (add, subtract, multiply, divide, mod) are ML — auto-trained on first use in chat.
 
 Anything else is treated as a free-form message to Neo, e.g.:
   hi
   add 5 and 3
   divide 20 by 4
+  20 mod 3
   double 21
 `);
 }
@@ -102,6 +105,9 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'divide') {
         await trainAndLearnDivide(neo);
         console.log('Skill "divide" learned.');
+      } else if (rest[0] === 'mod') {
+        await trainAndLearnMod(neo);
+        console.log('Skill "mod" learned.');
       } else if (rest[0] === 'double') {
         await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
@@ -127,7 +133,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train double | train language',
+          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train double | train language',
         );
       }
       break;
@@ -177,7 +183,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
       } else {
         console.log(
-          'Usage: use add <a> <b> | use subtract <a> <b> | use multiply <a> <b> | use divide <a> <b> | use double <n> | use isEven <n>',
+          'Usage: use add <a> <b> | use subtract <a> <b> | use multiply <a> <b> | use divide <a> <b> | use mod <a> <b> | use double <n> | use isEven <n>',
         );
       }
       break;

@@ -1,3 +1,5 @@
+import { createRng } from '../../utils/createRng';
+
 /** Max operand value used when generating random training pairs. */
 export const MULTIPLY_MAX_OPERAND = 1_000;
 
@@ -7,14 +9,6 @@ export const MULTIPLY_TRAINING_PAIRS = 1_000;
 export const EPOCHS_TRAIN_MULTIPLY = 50;
 
 export const MULTIPLY_TRAINING_SEED = 44;
-
-function createRng(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
-    return state / 2 ** 32;
-  };
-}
 
 /** Builds random multiplication examples: [a, b] → a * b. */
 export function generateMultiplyTrainingData(
