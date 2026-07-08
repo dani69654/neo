@@ -23,7 +23,8 @@ export type Intent =
   | 'thanks'
   | 'botChallenge'
   | 'help'
-  | 'unknown';
+  | 'unknown'
+  | 'tor';
 
 /** Fixed order used everywhere an intent needs to become a number (e.g. one-hot encoding, softmax output index). */
 export const INTENTS: Intent[] = [
@@ -43,6 +44,7 @@ export const INTENTS: Intent[] = [
   'botChallenge',
   'help',
   'unknown',
+  'tor',
 ];
 
 export interface LanguageExample {
@@ -268,6 +270,23 @@ export const LANGUAGE_TRAINING_DATA: LanguageExample[] = [
   { text: "what's your name", intent: 'botChallenge' },
   { text: 'are you real', intent: 'botChallenge' },
   { text: 'are you an ai', intent: 'botChallenge' },
+
+  // tor
+  { text: 'connect to tor', intent: 'tor' },
+  { text: 'connect to the tor network', intent: 'tor' },
+  { text: 'use tor', intent: 'tor' },
+  { text: 'enable tor', intent: 'tor' },
+  { text: 'go through tor', intent: 'tor' },
+  { text: 'route my traffic through tor', intent: 'tor' },
+  { text: 'anonymize my connection', intent: 'tor' },
+  { text: 'make my connection anonymous', intent: 'tor' },
+  { text: 'hide my ip', intent: 'tor' },
+  { text: 'are you connected to tor', intent: 'tor' },
+  { text: 'check tor connection', intent: 'tor' },
+  { text: 'am i on tor', intent: 'tor' },
+  { text: 'browse anonymously', intent: 'tor' },
+  { text: 'use the onion network', intent: 'tor' },
+  { text: 'turn on tor', intent: 'tor' },
 
   // unknown (genuinely unrelated small talk, no matching skill or topic)
   { text: "what's the weather like today", intent: 'unknown' },

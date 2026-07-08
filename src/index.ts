@@ -20,6 +20,7 @@ import { DEFAULT_BITS } from './skills/isEven/isEvenTestdata';
 import { useClear } from './skills/clear/clear';
 import { useResources } from './skills/resources/resources';
 import { useChitchat } from './skills/chitchat/chitchat';
+import { useTor } from './skills/tor/tor';
 import { formatSkillResult, toSkillResultJson } from './core/skillResult';
 
 const neo = new Neo();
@@ -48,6 +49,8 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train isEven [bits]      train the isEven skill (default: ${DEFAULT_BITS} bits, range 0–${2 ** DEFAULT_BITS - 1})
   train language           train the language skill (intent parsing)
   learn lang               same as train language
+  use tor                  check Neo is connected to Tor (reports the exit-node IP)
+  use tor <url>            fetch a URL through the Tor network (needs a running Tor daemon)
   learn chitchat           learn the chitchat skill (already loaded by default)
   train chat               same as learn chitchat
   knows <name>             check if Neo knows a skill
@@ -57,7 +60,9 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
 Trained skills are saved under data/models/ and restored on startup.
 Run "npm run train-all" to train everything once and persist to disk.
 
-Basic skills (clear, resources, chitchat) load at startup.
+Basic skills (clear, resources, chitchat, tor) load at startup.
+When Neo talks to the internet it always goes through Tor (start a Tor daemon on 127.0.0.1:9050,
+or set TOR_SOCKS_PROXY, e.g. socks5h://127.0.0.1:9150 for the Tor Browser).
 Math skills (add, subtract, multiply, divide, mod) are ML — auto-trained on first use in chat.
 
 Anything else is treated as a free-form message to Neo, e.g.:
@@ -140,6 +145,9 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'resources') {
         neo.learn('resources', useResources as Skill);
         console.log('Skill "resources" learned.');
+      } else if (rest[0] === 'tor') {
+        neo.learn('tor', useTor as Skill);
+        console.log('Skill "tor" learned.');
       } else {
         console.log(
           'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train recognizeFace | train double | train language',
@@ -197,9 +205,16 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Prediction failed.');
         }
+      } else if (rest[0] === 'tor') {
+        if (!neo.knows('tor')) neo.learn('tor', useTor as Skill);
+        try {
+          console.log(formatSkillResult(await neo.use('tor', rest[1])));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Tor request failed.');
+        }
       } else {
         console.log(
-          'Usage: use add <a> <b> | ... | use mod <a> <b> | use recognizeFace <image> | use double <n> | use isEven <n>',
+          'Usage: use add <a> <b> | ... | use mod <a> <b> | use recognizeFace <image> | use double <n> | use isEven <n> | use tor [url]',
         );
       }
       break;

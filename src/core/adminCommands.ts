@@ -60,6 +60,10 @@ const SKILL_SYNONYMS: Record<string, string> = {
   recognizeFace: 'recognizeFace',
   face: 'recognizeFace',
   faces: 'recognizeFace',
+  tor: 'tor',
+  onion: 'tor',
+  anonymize: 'tor',
+  anonymous: 'tor',
 };
 
 export interface ParsedAdminCommand {

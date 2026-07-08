@@ -15,7 +15,7 @@ import type { RecognizeFaceValue } from '../skills/recognizeFace/recognizeFace';
 
 const UNARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['double', 'isEven']);
 const BINARY_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['add', 'subtract', 'multiply', 'divide', 'mod']);
-const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources']);
+const IMMEDIATE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['clear', 'resources', 'tor']);
 const FACE_ACTION_INTENTS: ReadonlySet<Intent> = new Set(['recognizeFace']);
 
 function describeActionResult(intent: Intent, raw: unknown, numbers: number[]): string {

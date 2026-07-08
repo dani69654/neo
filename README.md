@@ -65,6 +65,7 @@ or calls the right skill for you.
 - 🙂 **Face recognition** — pretrained face detection + a 128-value face descriptor (dlib's ResNet-34, ~99.4% on LFW) to recognize people from photos, with honest "I don't recognize this face" rejection for strangers.
 - 💾 **Persistence** — every trained skill is saved to disk and silently restored on the next run; no need to retrain every session.
 - 🖥️ **Simple CLI** — a REPL with both a free-form chat mode and explicit admin commands (`train`, `use`, `knows`, `stats`, …).
+- 🧅 **Tor by default** — the `tor` skill routes every outbound request through the Tor network (SOCKS proxy, DNS included), so Neo's internet traffic stays anonymous.
 
 ## Architecture
 
@@ -240,6 +241,7 @@ neo> stats
 | `chitchat` | Rule-based | Canned replies for small talk (greetings, thanks, help, …) |
 | `clear` | Rule-based | Clears the terminal |
 | `resources` | Rule-based | Reports memory/CPU/uptime |
+| `tor` | Rule-based | Routes Neo's internet traffic through the Tor network (SOCKS proxy) |
 
 Every skill returns a `{ result, confidence }` pair (see
 `src/core/skillResult.ts`), so the CLI can always show how sure Neo is,
@@ -308,6 +310,45 @@ Replies come in three flavors:
 Very small, blurry, or heavily cropped photos (or photos with no detectable
 face at all) are skipped during training, with a summary logged to the
 console.
+
+## Anonymity (Tor)
+
+Neo never talks to the internet directly. The `tor` skill is the single gateway
+for outbound requests: `torFetch(url)` forces all traffic through a local Tor
+SOCKS proxy, and it uses the `socks5h` scheme so DNS is resolved by Tor too — no
+IP or DNS leaks. Any future skill that needs the network should call `torFetch`
+instead of Node's `fetch`/`http`, so nothing ever bypasses Tor.
+
+### Prerequisite
+
+A Tor daemon must be running locally. By default Neo connects to
+`socks5h://127.0.0.1:9050`; override it with the `TOR_SOCKS_PROXY` environment
+variable (the Tor Browser bundle listens on `socks5h://127.0.0.1:9150`).
+
+```bash
+# macOS (Homebrew)
+brew install tor && brew services start tor
+
+# Debian/Ubuntu
+sudo apt install tor && sudo service tor start
+```
+
+### Using it
+
+```
+neo> connect to tor
+Connected to Tor via socks5h://127.0.0.1:9050. Exit-node IP: 185.220.101.x.
+All of Neo's internet traffic is now routed through the Tor network.
+
+neo> use tor https://check.torproject.org/api/ip
+Fetched https://check.torproject.org/api/ip through Tor (socks5h://127.0.0.1:9050).
+Status: 200 OK
+
+{"IsTor":true,"IP":"185.220.101.x"}
+```
+
+If Tor isn't running, Neo says so and explains how to start it — it never
+silently falls back to a direct (deanonymized) connection.
 
 ## Data & persistence
 
