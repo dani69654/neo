@@ -6,11 +6,13 @@ import type { Neo, Skill } from './Neo';
 import { useClear } from '../skills/clear/clear';
 import { useResources } from '../skills/resources/resources';
 import { useChitchat } from '../skills/chitchat/chitchat';
+import { useAskPeer } from '../skills/peer/peer';
 
 const BASIC_SKILLS: ReadonlyArray<[string, Skill]> = [
   ['clear', useClear as Skill],
   ['resources', useResources as Skill],
   ['chitchat', useChitchat as Skill],
+  ['askPeer', useAskPeer as Skill],
 ];
 
 export function registerBasicSkills(neo: Neo): void {

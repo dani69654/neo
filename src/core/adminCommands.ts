@@ -1,5 +1,5 @@
 /** Normalized admin verbs after synonym resolution. */
-export type AdminVerb = 'help' | 'exit' | 'train' | 'use' | 'knows' | 'clear' | 'stats';
+export type AdminVerb = 'help' | 'exit' | 'train' | 'use' | 'knows' | 'clear' | 'stats' | 'peer';
 
 const VERB_SYNONYMS: Record<string, AdminVerb> = {
   help: 'help',
@@ -26,6 +26,10 @@ const VERB_SYNONYMS: Record<string, AdminVerb> = {
   memory: 'stats',
   usage: 'stats',
   top: 'stats',
+  peer: 'peer',
+  peers: 'peer',
+  p2p: 'peer',
+  network: 'peer',
 };
 
 /** Maps lowercase aliases to canonical skill names. */
@@ -60,7 +64,13 @@ const SKILL_SYNONYMS: Record<string, string> = {
   recognizeFace: 'recognizeFace',
   face: 'recognizeFace',
   faces: 'recognizeFace',
+  askpeer: 'askPeer',
 };
+
+/** Resolves a lowercase skill alias (e.g. "sum") to its canonical name (e.g. "add"). */
+export function resolveSkillAlias(alias: string): string {
+  return SKILL_SYNONYMS[alias.toLowerCase()] ?? alias;
+}
 
 export interface ParsedAdminCommand {
   verb: AdminVerb;
