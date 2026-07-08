@@ -10,6 +10,7 @@ import { loadSubtractModel, saveSubtractModel, trainSubtract, useSubtract } from
 import { loadMultiplyModel, saveMultiplyModel, trainMultiply, useMultiply } from '../skills/multiply/multiply';
 import { loadDivideModel, saveDivideModel, trainDivide, useDivide } from '../skills/divide/divide';
 import { loadModModel, saveModModel, trainMod, useMod } from '../skills/mod/mod';
+import { loadSlmModel, saveSlmModel, trainSlm, useSlm } from '../skills/slm/slm';
 import {
   loadRecognizeFaceModel,
   saveRecognizeFaceModel,
@@ -54,6 +55,11 @@ export async function persistDivideSkill(): Promise<void> {
 export async function persistModSkill(): Promise<void> {
   await saveModModel();
   markSkillTrained('mod');
+}
+
+export async function persistSlmSkill(): Promise<void> {
+  await saveSlmModel();
+  markSkillTrained('slm');
 }
 
 export async function persistRecognizeFaceSkill(): Promise<void> {
@@ -103,6 +109,11 @@ export async function loadPersistedSkills(neo: Neo): Promise<string[]> {
   if (getSkillState('mod') && (await loadModModel())) {
     neo.learn('mod', useMod as Skill);
     restored.push('mod');
+  }
+
+  if (getSkillState('slm') && (await loadSlmModel())) {
+    neo.learn('slm', useSlm as Skill);
+    restored.push('slm');
   }
 
   if (getSkillState('recognizeFace') && (await loadRecognizeFaceModel())) {
@@ -156,6 +167,11 @@ export async function trainAllPersistedSkills(neo: Neo, isEvenBits: number = DEF
   await trainMod();
   neo.learn('mod', useMod as Skill);
   await persistModSkill();
+
+  console.log('Training slm...');
+  await trainSlm();
+  neo.learn('slm', useSlm as Skill);
+  await persistSlmSkill();
 
   console.log('Training recognizeFace...');
   await trainRecognizeFace();

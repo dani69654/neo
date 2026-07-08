@@ -118,6 +118,15 @@ export class Chat {
       }
     }
 
+    if (intent === 'unknown') {
+      try {
+        await ensureSkill(this.neo, 'slm');
+        return formatSkillResult(await this.neo.use('slm', text));
+      } catch {
+        return this.reply('unknown');
+      }
+    }
+
     return this.reply(intent as ChitchatTopic);
   }
 }

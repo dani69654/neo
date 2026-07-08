@@ -12,6 +12,7 @@ import {
   trainAndLearnDivide,
   trainAndLearnMod,
   trainAndLearnRecognizeFace,
+  trainAndLearnSlm,
   trainAndLearnDouble,
   trainAndLearnIsEven,
   trainAndLearnLanguage,
@@ -41,6 +42,7 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train divide             train the divide skill (ML)
   train mod                train the mod skill (ML)
   train recognizeFace      train face recognition (ML — add photos to data/faces/<name>/ first)
+  train slm                download/load local small language model (SLM)
   train double             train the double skill (ML)
   learn double             same as train double
   use double <n>           run the double skill on a number
@@ -67,6 +69,7 @@ Anything else is treated as a free-form message to Neo, e.g.:
   20 mod 3
   double 21
   who is in data/faces/<name>/<photo>.jpg
+  use slm explain recursion
 
 Add photos under data/faces/<name>/ before training recognizeFace.
 After adding new language intents, run "train language" (or "npm run train-all").
@@ -117,6 +120,9 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
       } else if (rest[0] === 'recognizeFace') {
         await trainAndLearnRecognizeFace(neo);
         console.log('Skill "recognizeFace" learned.');
+      } else if (rest[0] === 'slm') {
+        await trainAndLearnSlm(neo);
+        console.log('Skill "slm" learned.');
       } else if (rest[0] === 'double') {
         await trainAndLearnDouble(neo);
         console.log('Skill "double" learned.');
@@ -142,7 +148,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Skill "resources" learned.');
       } else {
         console.log(
-          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train recognizeFace | train double | train language',
+          'Unknown skill. Try: train add | train subtract | train multiply | train divide | train mod | train slm | train recognizeFace | train double | train language',
         );
       }
       break;
@@ -173,6 +179,14 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         } catch (err) {
           console.log(err instanceof Error ? err.message : 'Face recognition failed.');
         }
+      } else if (rest[0] === 'slm' && rest[1] !== undefined) {
+        const prompt = rest.slice(1).join(' ');
+        try {
+          await ensureSkill(neo, 'slm');
+          console.log(toSkillResultJson(await neo.use('slm', prompt)));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'SLM generation failed.');
+        }
       } else if (rest[0] === 'double' && rest[1] !== undefined) {
         const n = Number(rest[1]);
         if (Number.isNaN(n)) {
@@ -199,7 +213,7 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         }
       } else {
         console.log(
-          'Usage: use add <a> <b> | ... | use mod <a> <b> | use recognizeFace <image> | use double <n> | use isEven <n>',
+          'Usage: use add <a> <b> | ... | use mod <a> <b> | use slm <prompt> | use recognizeFace <image> | use double <n> | use isEven <n>',
         );
       }
       break;
