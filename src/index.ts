@@ -21,6 +21,9 @@ import { useClear } from './skills/clear/clear';
 import { useResources } from './skills/resources/resources';
 import { useChitchat } from './skills/chitchat/chitchat';
 import { formatSkillResult, toSkillResultJson } from './core/skillResult';
+import { resolveSkillAlias } from './core/adminCommands';
+import { startPeerServer, stopPeerServer } from './core/peerServer';
+import { loadPeerConfig, listPeerNames } from './core/peerConfig';
 
 const neo = new Neo();
 const chat = new Chat(neo);
@@ -52,6 +55,10 @@ Admin commands (train, learn, and teach are interchangeable; same for use/run, k
   train chat               same as learn chitchat
   knows <name>             check if Neo knows a skill
   has <name>               same as knows <name>
+  peer serve               start this Neo's peer server (see data/peers.json)
+  peer stop                stop the peer server
+  peer list                list peers configured in data/peers.json
+  peer ask <peer> <skill> [args...]   ask another Neo to run one of its skills
   exit                     quit
 
 Trained skills are saved under data/models/ and restored on startup.
@@ -70,6 +77,9 @@ Anything else is treated as a free-form message to Neo, e.g.:
 
 Add photos under data/faces/<name>/ before training recognizeFace.
 After adding new language intents, run "train language" (or "npm run train-all").
+
+To talk to another Neo, copy data/peers.example.json to data/peers.json, edit it
+on each machine, then run "peer serve" on both and "peer ask <peer> <skill> [args]".
 `);
 }
 
@@ -211,6 +221,45 @@ async function handleAdminCommand(verb: string, rest: string[]): Promise<boolean
         console.log('Usage: knows <name>');
       }
       break;
+
+    case 'peer': {
+      const sub = rest[0]?.toLowerCase();
+
+      if (sub === 'serve' || sub === 'start') {
+        try {
+          const port = await startPeerServer(neo);
+          const { self } = loadPeerConfig();
+          console.log(`Peer server listening on port ${port} as "${self.name}".`);
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Could not start the peer server.');
+        }
+      } else if (sub === 'stop') {
+        await stopPeerServer();
+        console.log('Peer server stopped.');
+      } else if (sub === 'list') {
+        try {
+          const names = listPeerNames();
+          console.log(names.length > 0 ? names.join(', ') : 'No peers configured in data/peers.json.');
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Could not read peer configuration.');
+        }
+      } else if (sub === 'ask' && rest[1] && rest[2]) {
+        const peerName = rest[1];
+        const skillName = resolveSkillAlias(rest[2]);
+        const args = rest.slice(3).map((arg) => {
+          const n = Number(arg);
+          return Number.isNaN(n) ? arg : n;
+        });
+        try {
+          console.log(toSkillResultJson(await neo.use('askPeer', peerName, skillName, ...args)));
+        } catch (err) {
+          console.log(err instanceof Error ? err.message : 'Peer request failed.');
+        }
+      } else {
+        console.log('Usage: peer serve | peer stop | peer list | peer ask <peer> <skill> [args...]');
+      }
+      break;
+    }
   }
 
   return true;

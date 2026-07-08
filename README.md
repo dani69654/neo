@@ -65,6 +65,7 @@ or calls the right skill for you.
 - 🙂 **Face recognition** — pretrained face detection + a 128-value face descriptor (dlib's ResNet-34, ~99.4% on LFW) to recognize people from photos, with honest "I don't recognize this face" rejection for strangers.
 - 💾 **Persistence** — every trained skill is saved to disk and silently restored on the next run; no need to retrain every session.
 - 🖥️ **Simple CLI** — a REPL with both a free-form chat mode and explicit admin commands (`train`, `use`, `knows`, `stats`, …).
+- 🌐 **Neo-to-Neo networking** — one Neo instance can ask another Neo instance (on the same machine or over the network) to run one of *its* skills via `askPeer`, authenticated with a shared bearer token.
 
 ## Architecture
 
@@ -122,6 +123,8 @@ src/
 │  ├─ skillResult.ts         # { result, confidence } shape used by every skill
 │  ├─ modelStore.ts          # disk I/O for TF.js models + JSON side-files
 │  ├─ neoState.ts            # data/neo-state.json (what's trained, when)
+│  ├─ peerConfig.ts          # data/peers.json (this Neo's identity + known peers)
+│  ├─ peerServer.ts          # HTTP server: lets another Neo call our skills
 │  └─ paths.ts               # data/ layout constants
 ├─ skills/
 │  ├─ add/ subtract/ multiply/ divide/ mod/   # binary arithmetic (TF.js)
@@ -130,6 +133,7 @@ src/
 │  ├─ language/                               # intent classifier + parsers
 │  ├─ chitchat/                               # canned conversational replies
 │  ├─ clear/ resources/                       # rule-based utility skills
+│  ├─ peer/                                   # askPeer: delegate a skill call to another Neo
 │  └─ <skill>/<skill>Testdata.ts              # training data generator per skill
 ├─ scripts/
 │  └─ trainAll.ts            # `npm run train-all`
@@ -219,6 +223,9 @@ interchangeable, and skill names have friendly aliases (`sum` → `add`,
 | `knows <skill>` | Check whether Neo currently knows a skill |
 | `stats` | Show Neo's own process resource usage (memory, CPU, uptime) |
 | `clear` | Clear the terminal |
+| `peer serve` / `peer stop` | Start/stop this Neo's peer HTTP server |
+| `peer list` | List peers configured in `data/peers.json` |
+| `peer ask <peer> <skill> [args...]` | Ask another Neo instance to run one of its skills |
 | `exit` | Quit |
 
 ```
@@ -240,6 +247,7 @@ neo> stats
 | `chitchat` | Rule-based | Canned replies for small talk (greetings, thanks, help, …) |
 | `clear` | Rule-based | Clears the terminal |
 | `resources` | Rule-based | Reports memory/CPU/uptime |
+| `askPeer` | Rule-based (network I/O) | Asks another Neo instance to run one of its skills over HTTP |
 
 Every skill returns a `{ result, confidence }` pair (see
 `src/core/skillResult.ts`), so the CLI can always show how sure Neo is,
@@ -309,6 +317,77 @@ Very small, blurry, or heavily cropped photos (or photos with no detectable
 face at all) are skipped during training, with a summary logged to the
 console.
 
+## Talking to another Neo
+
+Two independent Neo instances — on the same laptop, on different machines on
+your LAN, or anywhere reachable over HTTP — can talk to each other. Neo A
+doesn't run Neo B's skills locally; it sends a small HTTP request asking Neo B
+to run the skill *itself* and return the result.
+
+```
+┌──────────┐   POST /peer/ask   ┌──────────┐
+│  Neo A   │ ─────────────────▶ │  Neo B   │
+│ (client) │  { skill, args }   │ (server) │
+│          │ ◀───────────────── │          │
+└──────────┘  { result, conf }  └──────────┘
+```
+
+- **`peerServer`** (`src/core/peerServer.ts`) is a plain Node `http` server.
+  Started with `peer serve`, it exposes `POST /peer/ask`, checks a bearer
+  token, then calls `ensureSkill` + `neo.use(skill, ...args)` exactly like a
+  local admin command would — it never bypasses training or validation.
+- **`askPeer`** (`src/skills/peer/peer.ts`) is a skill like any other
+  (`neo.learn('askPeer', ...)`, loaded by default): it looks up a peer by
+  name in `data/peers.json` and does the HTTP call. From `Neo`'s point of
+  view it's just `neo.use('askPeer', peerName, skillName, ...args)`.
+- **`data/peers.json`** is the only piece of config involved: who *this* Neo
+  is (`self.name`, `self.port`, `self.token`), and which other Neo instances
+  it's allowed to call (`peers[].name`, `.url`, `.token`). It's gitignored —
+  copy the committed template and edit it per machine:
+
+```bash
+cp data/peers.example.json data/peers.json
+```
+
+```json
+{
+  "self": { "name": "neo-laptop", "port": 4000, "token": "shared-secret" },
+  "peers": [
+    { "name": "neo-desktop", "url": "http://192.168.1.20:4000", "token": "shared-secret" }
+  ]
+}
+```
+
+Then, on each machine:
+
+```
+neo> peer serve
+Peer server listening on port 4000 as "neo-laptop".
+```
+
+And from the other one:
+
+```
+neo> peer ask neo-desktop double 21
+{"result":41.99997329711914,"confidence":1}
+
+neo> peer ask neo-desktop resources
+{"result":"Neo resource usage:\n  Uptime: 12.4s\n  ...","confidence":1}
+```
+
+`peer ask` auto-trains the remote skill on the remote machine if it isn't
+loaded yet, exactly like calling it locally would.
+
+### Security notes
+
+- The token is a simple shared-secret bearer check, meant for trusted
+  networks (e.g. your own LAN) — there's no TLS or per-request signing.
+  Put a reverse proxy with HTTPS in front if you expose it beyond that.
+- Only peers listed in `data/peers.json` are ever contacted; there's no
+  discovery or arbitrary URL input from chat.
+- A malicious or misconfigured peer can trigger training of any skill it
+  asks for — keep `peers.json` limited to machines you trust.
+
 ## Data & persistence
 
 Everything Neo learns lives under `data/` (gitignored, generated locally):
@@ -317,11 +396,13 @@ Everything Neo learns lives under `data/` (gitignored, generated locally):
 data/
 ├─ neo-state.json     # which skills are trained, and when
 ├─ models/<skill>/    # TF.js model.json/weights.bin + JSON side-files
-└─ faces/<name>/      # your photos for recognizeFace (never committed)
+├─ faces/<name>/      # your photos for recognizeFace (never committed)
+└─ peers.json         # this Neo's identity + known peers (never committed)
 ```
 
 Nothing under `data/` needs to be checked into version control — everything
-there is either generated by training or personal photo data.
+there is either generated by training, personal photo data, or local/secret
+peer configuration. `data/peers.example.json` is the only committed template.
 
 ## NPM scripts
 
